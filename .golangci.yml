@@ -1,20 +1,35 @@
-run:
-  timeout: 5m
-
+version: "2"
 linters:
-  enable-all: false
   enable:
     - errcheck
-    - gosimple
     - govet
     - ineffassign
     - staticcheck
-    - typecheck
     - unused
-
-issues:
-  exclude-rules:
-    # Ignore errcheck for tests
-    - path: _test\.go
-      linters:
-        - errcheck
+    - gosec
+    - revive
+  exclusions:
+    rules:
+      - linters:
+          - revive
+        text: "should have comment"
+      - linters:
+          - errcheck
+        path: "_test\\.go$"
+  settings:
+    errcheck:
+      check-type-assertions: true
+      check-blank: true
+    govet:
+      enable-all: true
+      disable:
+        - fieldalignment
+    revive:
+      rules:
+        - name: exported
+          disabled: false
+        - name: unexported-return
+          disabled: false
+    gosec:
+      excludes:
+        - G104
