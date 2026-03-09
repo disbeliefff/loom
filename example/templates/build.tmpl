@@ -1,0 +1,43 @@
+# Auto-generated DEVELOPMENT build pipeline for: {{ .Context.CommitBranch }}
+
+include:
+  - project: 'your-org/devops/ci-templates'
+    file: 'templates/build/docker-build.yml'
+  - project: 'your-org/devops/ci-templates'
+    file: 'templates/deploy/gitops-promote.yml'
+
+stages:
+  - build
+  - gitops-sync
+
+{{ if not .Jobs }}
+no-op:
+  stage: build
+  script:
+    - echo "No monorepo services were modified in this commit."
+{{ end }}
+
+{{- range .Jobs }}
+# -----------------------------------------------------------------------------
+# Service: {{ .Service.Key }}
+# -----------------------------------------------------------------------------
+build:{{ .Service.SafeKey }}:
+  extends: .docker-build
+  stage: build
+  variables:
+    IMAGE_NAME: "{{ .Service.Raw.image }}"
+    BUILD_CONTEXT: "{{ .Service.Raw.watch_dir }}"
+
+promote:{{ .Service.SafeKey }}:
+  extends: .gitops-promote
+  stage: gitops-sync
+  needs: ["build:{{ .Service.SafeKey }}"]
+  variables:
+    IMAGE_NAME: "{{ .Service.Raw.image }}"
+    IMAGE_TAG: "{{ $.Context.CommitSHA }}"
+    KUSTOMIZE_PATH: "{{ .Service.Raw.kustomize }}"
+{{- if .Service.Raw.slack_channel }}
+    NOTIFY_CHANNEL: "{{ .Service.Raw.slack_channel }}"
+{{- end }}
+
+{{ end -}}

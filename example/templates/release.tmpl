@@ -1,0 +1,46 @@
+# Auto-generated RELEASE pipeline for: {{ .Context.CommitTag }}
+
+include:
+  - project: 'your-org/devops/ci-templates'
+    file: 'templates/release/docker-release.yml'
+  - project: 'your-org/devops/ci-templates'
+    file: 'templates/deploy/gitops-promote.yml'
+
+stages:
+  - build-release
+  - gitops-sync-prod
+
+{{ if not .Jobs }}
+no-op:
+  stage: build-release
+  script:
+    - echo "Error: Release tag did not match any service in services.json"
+    - exit 1
+{{ end }}
+
+{{- range .Jobs }}
+# -----------------------------------------------------------------------------
+# PRODUCTION RELEASE: {{ .Service.Key }}
+# -----------------------------------------------------------------------------
+build-release:{{ .Service.SafeKey }}:
+  extends: .docker-release
+  stage: build-release
+  variables:
+    IMAGE_NAME: "{{ .Service.Raw.image }}"
+    BUILD_CONTEXT: "{{ .Service.Raw.watch_dir }}"
+    TAG_NAME: "{{ $.Context.CommitTag }}"
+
+promote-prod:{{ .Service.SafeKey }}:
+  extends: .gitops-promote
+  stage: gitops-sync-prod
+  needs: ["build-release:{{ .Service.SafeKey }}"]
+  variables:
+    IMAGE_NAME: "{{ .Service.Raw.image }}"
+    IMAGE_TAG: "{{ $.Context.CommitTag }}"
+    # Helm or Kustomize path logic (demonstrating flexible metadata usage)
+{{- if .Service.Raw.helm_chart }}
+    HELM_CHART_PATH: "{{ .Service.Raw.helm_chart }}"
+{{- else }}
+    KUSTOMIZE_PATH: "{{ .Service.Raw.kustomize }}"
+{{- end }}
+{{- end -}}

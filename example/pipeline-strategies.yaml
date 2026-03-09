@@ -1,0 +1,26 @@
+strategies:
+  # 1. Dev Branch - Selects services based on changed files
+  - name: "dev-build"
+    condition: 'env("CI_COMMIT_BRANCH") == "dev"'
+    selector:
+      type: "git-diff"
+      before_sha: '{{ .Context.BeforeSHA }}'
+      current_sha: '{{ .Context.CommitSHA }}'
+      watch_field: "watch_dir"
+    template: "example/templates/build.tmpl"
+
+  # 2. Production Release - Selects service matching the tag name (e.g. AuthService/v1.0.0)
+  - name: "tag-release"
+    condition: 'env("CI_COMMIT_TAG") != ""'
+    selector:
+      type: "regex-tag"
+      pattern: '^{{ .Service.Key }}/.*$'
+    template: "example/templates/release.tmpl"
+
+  # 3. Manual Deploy - Selects services where DEPLOY_<SERVICE_KEY>=true
+  - name: "manual"
+    condition: 'env("CI_PIPELINE_SOURCE") == "web" || env("CI_PIPELINE_SOURCE") == "api"'
+    selector:
+      type: "env-match"
+      prefix: "DEPLOY_"
+    template: "example/templates/manual.tmpl"

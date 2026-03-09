@@ -1,0 +1,40 @@
+# Auto-generated MANUAL DEPLOY pipeline
+
+include:
+  - project: 'your-org/devops/ci-templates'
+    file: 'templates/build/docker-build.yml'
+  - project: 'your-org/devops/ci-templates'
+    file: 'templates/deploy/gitops-promote.yml'
+
+stages:
+  - manual-build
+  - manual-deploy
+
+{{ if not .Jobs }}
+no-op:
+  stage: manual-build
+  script:
+    - echo "No DEPLOY_<SERVICE> environment variables were passed."
+    - exit 1
+{{ end }}
+
+{{- range .Jobs }}
+# -----------------------------------------------------------------------------
+# MANUAL SERVICE DEPLOY: {{ .Service.Key }}
+# -----------------------------------------------------------------------------
+manual-build:{{ .Service.SafeKey }}:
+  extends: .docker-build
+  stage: manual-build
+  variables:
+    IMAGE_NAME: "{{ .Service.Raw.image }}"
+    BUILD_CONTEXT: "{{ .Service.Raw.watch_dir }}"
+
+manual-promote:{{ .Service.SafeKey }}:
+  extends: .gitops-promote
+  stage: manual-deploy
+  needs: ["manual-build:{{ .Service.SafeKey }}"]
+  variables:
+    IMAGE_NAME: "{{ .Service.Raw.image }}"
+    IMAGE_TAG: "manual-{{ $.Context.PipelineID }}"
+    KUSTOMIZE_PATH: "{{ .Service.Raw.kustomize }}"
+{{- end -}}
