@@ -1,17 +1,14 @@
 import os
-from flask import Flask, jsonify
-
-app = Flask(__name__)
+from http.server import BaseHTTPRequestHandler, HTTPServer
 
 
-@app.route("/health")
-def health():
-    return jsonify({"status": "ok", "service": "AccountingAPI"})
+class Handler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b"Hello, World!")
 
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
-    app.run(host="0.0.0.0", port=port)
-# modified 1773085952
-# modified 1773086000
-# modified 1773086054
+    HTTPServer(("0.0.0.0", port), Handler).serve_forever()
