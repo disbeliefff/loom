@@ -2,9 +2,6 @@
 
 **Loom** is a fast, declarative CLI utility, designed to dynamically generate GitLab CI child pipelines for **monorepos** and seamlessly adapt them for **GitOps workflows** (e.g., FluxCD, ArgoCD).
 
-
-
-
 ---
 
 ##  GitOps Example (FluxCD)
