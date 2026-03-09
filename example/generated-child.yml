@@ -1,0 +1,207 @@
+--------------------------------------------------------
+[Example 1] Simulating a push to 'dev' branch (git-diff strategy)
+--------------------------------------------------------
+# Auto-generated DEVELOPMENT build pipeline for: dev
+
+include:
+  - project: 'your-org/devops/ci-templates'
+    file: 'templates/build/docker-build.yml'
+  - project: 'your-org/devops/ci-templates'
+    file: 'templates/deploy/gitops-promote.yml'
+
+stages:
+  - build
+  - gitops-sync
+
+
+# -----------------------------------------------------------------------------
+# Service: AccountingAPI
+# -----------------------------------------------------------------------------
+build:AccountingAPI:
+  extends: .docker-build
+  stage: build
+  variables:
+    IMAGE_NAME: "registry.gitlab.com/org/accounting-api"
+    BUILD_CONTEXT: "example/src/Accounting/API"
+
+promote:AccountingAPI:
+  extends: .gitops-promote
+  stage: gitops-sync
+  needs: ["build:AccountingAPI"]
+  variables:
+    IMAGE_NAME: "registry.gitlab.com/org/accounting-api"
+    IMAGE_TAG: "c1dde19dcee40f985b788033f17b3be76ad14cd5"
+    KUSTOMIZE_PATH: "apps/accounting/overlays/prod"
+    NOTIFY_CHANNEL: "#dev-accounting"
+
+
+# -----------------------------------------------------------------------------
+# Service: BillingService
+# -----------------------------------------------------------------------------
+build:BillingService:
+  extends: .docker-build
+  stage: build
+  variables:
+    IMAGE_NAME: "registry.gitlab.com/org/billing-service"
+    BUILD_CONTEXT: "example/src/Billing"
+
+promote:BillingService:
+  extends: .gitops-promote
+  stage: gitops-sync
+  needs: ["build:BillingService"]
+  variables:
+    IMAGE_NAME: "registry.gitlab.com/org/billing-service"
+    IMAGE_TAG: "c1dde19dcee40f985b788033f17b3be76ad14cd5"
+    KUSTOMIZE_PATH: "apps/billing/overlays/prod"
+    NOTIFY_CHANNEL: "#dev-billing"
+
+
+# -----------------------------------------------------------------------------
+# Service: AnalyticsWorker
+# -----------------------------------------------------------------------------
+build:AnalyticsWorker:
+  extends: .docker-build
+  stage: build
+  variables:
+    IMAGE_NAME: "registry.gitlab.com/org/analytics-worker"
+    BUILD_CONTEXT: "example/src/workers/Analytics"
+
+promote:AnalyticsWorker:
+  extends: .gitops-promote
+  stage: gitops-sync
+  needs: ["build:AnalyticsWorker"]
+  variables:
+    IMAGE_NAME: "registry.gitlab.com/org/analytics-worker"
+    IMAGE_TAG: "c1dde19dcee40f985b788033f17b3be76ad14cd5"
+    KUSTOMIZE_PATH: "apps/workers/analytics/overlays/prod"
+    NOTIFY_CHANNEL: "#dev-data"
+
+
+
+--------------------------------------------------------
+[Example 2] Simulating a production release tag 'AccountingAPI/v1.0.0' (regex-tag strategy)
+--------------------------------------------------------
+# Auto-generated RELEASE pipeline for: AccountingAPI/v1.0.0
+
+include:
+  - project: 'your-org/devops/ci-templates'
+    file: 'templates/release/docker-release.yml'
+  - project: 'your-org/devops/ci-templates'
+    file: 'templates/deploy/gitops-promote.yml'
+
+stages:
+  - build-release
+  - gitops-sync-prod
+
+
+# -----------------------------------------------------------------------------
+# PRODUCTION RELEASE: AccountingAPI
+# -----------------------------------------------------------------------------
+build-release:AccountingAPI:
+  extends: .docker-release
+  stage: build-release
+  variables:
+    IMAGE_NAME: "registry.gitlab.com/org/accounting-api"
+    BUILD_CONTEXT: "example/src/Accounting/API"
+    TAG_NAME: "AccountingAPI/v1.0.0"
+
+promote-prod:AccountingAPI:
+  extends: .gitops-promote
+  stage: gitops-sync-prod
+  needs: ["build-release:AccountingAPI"]
+  variables:
+    IMAGE_NAME: "registry.gitlab.com/org/accounting-api"
+    IMAGE_TAG: "AccountingAPI/v1.0.0"
+    # Helm or Kustomize path logic (demonstrating flexible metadata usage)
+    KUSTOMIZE_PATH: "apps/accounting/overlays/prod"
+
+--------------------------------------------------------
+[Example 3] Simulating a production release tag 'BillingService/v2.1.0' (regex-tag with Helm chart fallback)
+--------------------------------------------------------
+# Auto-generated RELEASE pipeline for: BillingService/v2.1.0
+
+include:
+  - project: 'your-org/devops/ci-templates'
+    file: 'templates/release/docker-release.yml'
+  - project: 'your-org/devops/ci-templates'
+    file: 'templates/deploy/gitops-promote.yml'
+
+stages:
+  - build-release
+  - gitops-sync-prod
+
+
+# -----------------------------------------------------------------------------
+# PRODUCTION RELEASE: BillingService
+# -----------------------------------------------------------------------------
+build-release:BillingService:
+  extends: .docker-release
+  stage: build-release
+  variables:
+    IMAGE_NAME: "registry.gitlab.com/org/billing-service"
+    BUILD_CONTEXT: "example/src/Billing"
+    TAG_NAME: "BillingService/v2.1.0"
+
+promote-prod:BillingService:
+  extends: .gitops-promote
+  stage: gitops-sync-prod
+  needs: ["build-release:BillingService"]
+  variables:
+    IMAGE_NAME: "registry.gitlab.com/org/billing-service"
+    IMAGE_TAG: "BillingService/v2.1.0"
+    # Helm or Kustomize path logic (demonstrating flexible metadata usage)
+    HELM_CHART_PATH: "charts/billing"
+
+--------------------------------------------------------
+[Example 4] Simulating a manual pipeline triggered via Web UI with variables (env-match strategy)
+--------------------------------------------------------
+# Auto-generated MANUAL DEPLOY pipeline
+
+include:
+  - project: 'your-org/devops/ci-templates'
+    file: 'templates/build/docker-build.yml'
+  - project: 'your-org/devops/ci-templates'
+    file: 'templates/deploy/gitops-promote.yml'
+
+stages:
+  - manual-build
+  - manual-deploy
+
+
+# -----------------------------------------------------------------------------
+# MANUAL SERVICE DEPLOY: AccountingAPI
+# -----------------------------------------------------------------------------
+manual-build:AccountingAPI:
+  extends: .docker-build
+  stage: manual-build
+  variables:
+    IMAGE_NAME: "registry.gitlab.com/org/accounting-api"
+    BUILD_CONTEXT: "example/src/Accounting/API"
+
+manual-promote:AccountingAPI:
+  extends: .gitops-promote
+  stage: manual-deploy
+  needs: ["manual-build:AccountingAPI"]
+  variables:
+    IMAGE_NAME: "registry.gitlab.com/org/accounting-api"
+    IMAGE_TAG: "manual-123456"
+    KUSTOMIZE_PATH: "apps/accounting/overlays/prod"
+# -----------------------------------------------------------------------------
+# MANUAL SERVICE DEPLOY: AnalyticsWorker
+# -----------------------------------------------------------------------------
+manual-build:AnalyticsWorker:
+  extends: .docker-build
+  stage: manual-build
+  variables:
+    IMAGE_NAME: "registry.gitlab.com/org/analytics-worker"
+    BUILD_CONTEXT: "example/src/workers/Analytics"
+
+manual-promote:AnalyticsWorker:
+  extends: .gitops-promote
+  stage: manual-deploy
+  needs: ["manual-build:AnalyticsWorker"]
+  variables:
+    IMAGE_NAME: "registry.gitlab.com/org/analytics-worker"
+    IMAGE_TAG: "manual-123456"
+    KUSTOMIZE_PATH: "apps/workers/analytics/overlays/prod"
+
