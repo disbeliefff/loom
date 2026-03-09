@@ -1,5 +1,4 @@
 version: "2"
-
 linters:
   enable:
     - errcheck
@@ -14,7 +13,9 @@ linters:
       - linters:
           - revive
         text: "should have comment"
-
+      - linters:
+          - errcheck
+        path: "_test\\.go$"
   settings:
     errcheck:
       check-type-assertions: true

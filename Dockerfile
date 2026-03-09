@@ -23,5 +23,4 @@ WORKDIR /workspace
 
 COPY --from=builder /app/loom /usr/local/bin/loom
 
-# By default, provide a shell so GitLab CI can run its script blocks
 CMD ["/bin/bash"]
