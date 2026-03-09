@@ -1,0 +1,36 @@
+linters:
+  enable:
+    - errcheck
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+    - gosec
+    - revive
+
+issues:
+  exclude-rules:
+    - linters:
+        - revive
+      text: "should have comment"
+    - path: "_test\\.go"
+      linters:
+        - errcheck
+
+linters-settings:
+  errcheck:
+    check-type-assertions: true
+    check-blank: true
+  govet:
+    enable-all: true
+    disable:
+      - fieldalignment
+  revive:
+    rules:
+      - name: exported
+        disabled: false
+      - name: unexported-return
+        disabled: false
+  gosec:
+    excludes:
+      - G104
