@@ -8,29 +8,45 @@ linters:
     - gosec
     - revive
 
-issues:
-  exclude-rules:
-    - linters:
-        - revive
-      text: "should have comment"
-    - path: "_test\\.go"
-      linters:
-        - errcheck
-
-linters-settings:
-  errcheck:
-    check-type-assertions: true
-    check-blank: true
-  govet:
-    enable-all: true
-    disable:
-      - fieldalignment
-  revive:
+  # Defines a set of rules to ignore issues.
+  exclusions:
+    # Mode of the generated files analysis.
+    generated: lax
+    # Log a warning if an exclusion rule is unused.
+    warn-unused: true
+    # Predefined exclusion rules.
+    presets:
+      - comments
+      - std-error-handling
+      - common-false-positives
+      - legacy
+    
+    # Excluding configuration per-path, per-linter, per-text and per-source.
     rules:
-      - name: exported
-        disabled: false
-      - name: unexported-return
-        disabled: false
-  gosec:
-    excludes:
-      - G104
+      - linters:
+          - revive
+        text: "should have comment"
+      # Exclude some linters from running on tests files.
+      - path: _test\.go
+        linters:
+          - errcheck
+          - gosec
+
+  # All available settings of specific linters.
+  settings:
+    errcheck:
+      check-type-assertions: true
+      check-blank: true
+    govet:
+      enable-all: true
+      disable:
+        - fieldalignment
+    revive:
+      rules:
+        - name: exported
+          disabled: false
+        - name: unexported-return
+          disabled: false
+    gosec:
+      excludes:
+        - G104
