@@ -1,29 +1,13 @@
-# 🧵 Loom
+#  Loom
 
-**Loom** is a fast, declarative CLI utility written in Go 1.25, designed to dynamically generate GitLab CI child pipelines for **monorepos** and seamlessly adapt them for **GitOps workflows** (e.g., FluxCD, ArgoCD).
+**Loom** is a fast, declarative CLI utility, designed to dynamically generate GitLab CI child pipelines for **monorepos** and seamlessly adapt them for **GitOps workflows** (e.g., FluxCD, ArgoCD).
 
-Instead of relying on hardcoded Python or Bash scripts to determine which services to build, Loom allows you to define your deployment strategies, Git triggers, and service metadata declaratively. It "weaves" this data together using flexible Go templates to produce a highly targeted GitLab CI child pipeline.
 
-## 🌟 Why Loom? The GitOps & Monorepo Problem
 
-In a monorepo, you have dozens of services. When a developer pushes a commit, your CI needs to:
-1. Figure out exactly which services changed (via Git diff).
-2. Build and push new container images for only those services.
-3. **(GitOps Phase)** Update the deployment manifests (e.g., Kustomize overlays or Helm values) in a separate GitOps repository to trigger a deployment via FluxCD.
-
-Hardcoding this logic leads to brittle CI scripts. Loom solves this by acting as a router: it maps your source code directories to your GitOps manifest paths dynamically, evaluating CI environment variables to decide *how* to deploy.
-
-## ✨ Features
-
-- **No Hardcoded Business Logic**: Routing strategies (e.g., `dev-build`, `tag-release`, `manual-deploy`) are configured purely via YAML (`pipeline-strategies.yaml`).
-- **GitOps Native (Flexible Metadata)**: Reads arbitrary fields from your `services.json` (like `kustomize`, `helm_chart`, `slack_channel`). You can pass these directly to your CI jobs to tell your deployment scripts exactly which FluxCD directory to update.
-- **Smart Git Diffing**: Built-in support for computing changed files natively with `go-git`—no reliance on external `git` binaries in your CI runner. It handles edge cases flawlessly, automatically falling back to `HEAD~1` if `BEFORE_SHA` is missing.
-- **Powerful Templating**: Uses Go `text/template` extended with [Sprig functions](https://masterminds.github.io/sprig/) for complex string and data manipulations inside your CI yaml.
-- **Fast & Docker-ready**: Delivered as a statically compiled binary in a tiny Alpine-based Docker image, ensuring immediate startup times in GitLab CI.
 
 ---
 
-## 📖 Real-World GitOps Example (FluxCD)
+##  GitOps Example (FluxCD)
 
 Let's look at how to use Loom to build an automated GitOps pipeline using FluxCD.
 
@@ -129,7 +113,7 @@ stages:
   - setup
   - triggers
 
-generate-monorepo-pipeline:
+generate:
   stage: setup
   image: registry.gitlab.com/your-org/devops/loom:latest
   script:
@@ -138,18 +122,18 @@ generate-monorepo-pipeline:
     paths:
       - child-pipeline.yml
 
-trigger-monorepo-builds:
+trigger:
   stage: triggers
   trigger:
     include:
       - artifact: child-pipeline.yml
-        job: generate-monorepo-pipeline
+        job: generate
     strategy: depend
 ```
 
 ---
 
-## 🛠 Usage & Commands
+## Usage & Commands
 
 ```bash
 # Generate a pipeline (defaults to stdout if --out is not provided)
@@ -161,13 +145,3 @@ loom validate --config <path> --services <path>
 
 **Global Flags**:
 *   `--debug` / `-d`: Enables verbose debug logging (useful for troubleshooting `git-diff` edge cases).
-
-## 🐳 Building the Docker Image
-
-A standard multi-stage build `Dockerfile` is provided to compile the binary and package it into a minimal Alpine image.
-
-```bash
-docker build -t loom:latest .
-```
-
-The resulting image is just a few megabytes and requires zero external dependencies, making it perfect for instantaneous CI execution.
