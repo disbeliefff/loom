@@ -13,9 +13,9 @@ echo "--------------------------------------------------------"
 # Ensure we have git history for the git-diff to work
 # Let's create a fake commit in our repo to simulate a change
 echo "Creating a simulated code change to trigger git-diff..."
-echo "// modified $(date +%s)" >> example/src/Accounting/API/main.go
-echo "// modified $(date +%s)" >> example/src/Billing/main.go
-echo "// modified $(date +%s)" >> example/src/workers/Analytics/main.go
+echo "# modified $(date +%s)" >> example/src/Accounting/API/main.py
+echo "# modified $(date +%s)" >> example/src/Billing/main.py
+echo "# modified $(date +%s)" >> example/src/workers/Analytics/main.py
 git add example/src/
 git commit -m "Simulate changes to AccountingAPI, BillingService, and AnalyticsWorker" > /dev/null 2>&1 || true
 
