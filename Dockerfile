@@ -1,22 +1,23 @@
-FROM golang:1.25-alpine AS builder
+FROM golang:1.25-bookworm AS builder
 
 WORKDIR /app
 
-# Install git for any CGO dependencies if needed (though go-git is pure go)
-# RUN apk add --no-cache git
+RUN apt-get update && apt-get install -y --no-install-recommends git && \
+    rm -rf /var/lib/apt/lists/*
 
 COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
 
-# Build statically linked binary
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o loom ./cmd/loom
 
-FROM alpine:3.21
+FROM debian:bookworm-slim
 
-# Install git just in case the CI environment expects it or if any submodules are cloned
-RUN apk add --no-cache ca-certificates git bash
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    git \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /workspace
 
