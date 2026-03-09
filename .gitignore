@@ -1,0 +1,28 @@
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+loom
+
+# Output directory
+build/
+bin/
+
+# Test output
+coverage.out
+coverage.html
+
+# Go workspace file
+go.work
+
+# IDE / OS specific files
+.idea/
+.vscode/
+*.swp
+*~
+.DS_Store
+
+# Example generated files
+example/generated-child.yml

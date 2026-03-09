@@ -1,0 +1,21 @@
+# Ignore Git history
+.git/
+.gitignore
+.github/
+
+# Ignore local build artifacts
+build/
+bin/
+loom
+
+# Ignore IDE / OS files
+.idea/
+.vscode/
+.DS_Store
+
+# Ignore test artifacts
+coverage.out
+coverage.html
+
+# Ignore example outputs
+example/generated-child.yml
