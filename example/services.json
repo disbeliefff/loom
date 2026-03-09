@@ -1,0 +1,255 @@
+[
+  {
+    "key": "AccountingAPI",
+    "watch_dir": "example/src/Accounting/API",
+    "image": "registry.gitlab.com/org/accounting-api",
+    "kustomize": "apps/accounting/overlays/prod",
+    "slack_channel": "#dev-accounting"
+  },
+  {
+    "key": "AuthService",
+    "watch_dir": "example/src/Auth",
+    "image": "registry.gitlab.com/org/auth-service",
+    "kustomize": "apps/auth/overlays/prod",
+    "slack_channel": "#dev-auth"
+  },
+  {
+    "key": "BillingService",
+    "watch_dir": "example/src/Billing",
+    "image": "registry.gitlab.com/org/billing-service",
+    "kustomize": "apps/billing/overlays/prod",
+    "helm_chart": "charts/billing",
+    "slack_channel": "#dev-billing"
+  },
+  {
+    "key": "NotificationEngine",
+    "watch_dir": "example/src/Notifications",
+    "image": "registry.gitlab.com/org/notifications",
+    "kustomize": "apps/notifications/overlays/prod",
+    "slack_channel": "#dev-platform"
+  },
+  {
+    "key": "UserDashboard",
+    "watch_dir": "example/src/frontend/UserDashboard",
+    "image": "registry.gitlab.com/org/user-dashboard",
+    "kustomize": "apps/frontend/user-dashboard/overlays/prod",
+    "slack_channel": "#dev-frontend"
+  },
+  {
+    "key": "AdminPortal",
+    "watch_dir": "example/src/frontend/AdminPortal",
+    "image": "registry.gitlab.com/org/admin-portal",
+    "kustomize": "apps/frontend/admin-portal/overlays/prod",
+    "slack_channel": "#dev-frontend"
+  },
+  {
+    "key": "ReportingService",
+    "watch_dir": "example/src/Reporting",
+    "image": "registry.gitlab.com/org/reporting",
+    "kustomize": "apps/reporting/overlays/prod",
+    "slack_channel": "#dev-data"
+  },
+  {
+    "key": "AnalyticsWorker",
+    "watch_dir": "example/src/workers/Analytics",
+    "image": "registry.gitlab.com/org/analytics-worker",
+    "kustomize": "apps/workers/analytics/overlays/prod",
+    "slack_channel": "#dev-data"
+  },
+  {
+    "key": "EmailSender",
+    "watch_dir": "example/src/workers/Email",
+    "image": "registry.gitlab.com/org/email-worker",
+    "kustomize": "apps/workers/email/overlays/prod",
+    "slack_channel": "#dev-platform"
+  },
+  {
+    "key": "PaymentGateway",
+    "watch_dir": "example/src/Payment",
+    "image": "registry.gitlab.com/org/payment-gateway",
+    "kustomize": "apps/payment/overlays/prod",
+    "slack_channel": "#dev-billing"
+  },
+  {
+    "key": "SearchAPI",
+    "watch_dir": "example/src/Search",
+    "image": "registry.gitlab.com/org/search-api",
+    "kustomize": "apps/search/overlays/prod",
+    "slack_channel": "#dev-platform"
+  },
+  {
+    "key": "InventoryService",
+    "watch_dir": "example/src/Inventory",
+    "image": "registry.gitlab.com/org/inventory",
+    "kustomize": "apps/inventory/overlays/prod",
+    "slack_channel": "#dev-supply"
+  },
+  {
+    "key": "OrderProcessor",
+    "watch_dir": "example/src/workers/Orders",
+    "image": "registry.gitlab.com/org/order-processor",
+    "kustomize": "apps/workers/orders/overlays/prod",
+    "slack_channel": "#dev-supply"
+  },
+  {
+    "key": "MobileBFF",
+    "watch_dir": "example/src/MobileBFF",
+    "image": "registry.gitlab.com/org/mobile-bff",
+    "kustomize": "apps/mobile-bff/overlays/prod",
+    "slack_channel": "#dev-mobile"
+  },
+  {
+    "key": "WebhookReceiver",
+    "watch_dir": "example/src/Webhooks",
+    "image": "registry.gitlab.com/org/webhook-receiver",
+    "kustomize": "apps/webhooks/overlays/prod",
+    "slack_channel": "#dev-platform"
+  },
+  {
+    "key": "CustomerSupportAPI",
+    "watch_dir": "example/src/CustomerSupport",
+    "image": "registry.gitlab.com/org/support-api",
+    "kustomize": "apps/support/overlays/prod",
+    "slack_channel": "#dev-support"
+  },
+  {
+    "key": "DataWarehouseSync",
+    "watch_dir": "example/src/workers/DWSync",
+    "image": "registry.gitlab.com/org/dw-sync",
+    "kustomize": "apps/workers/dw-sync/overlays/prod",
+    "slack_channel": "#dev-data"
+  },
+  {
+    "key": "ChatbotService",
+    "watch_dir": "example/src/Chatbot",
+    "image": "registry.gitlab.com/org/chatbot",
+    "kustomize": "apps/chatbot/overlays/prod",
+    "slack_channel": "#dev-support"
+  },
+  {
+    "key": "AuditLogService",
+    "watch_dir": "example/src/AuditLog",
+    "image": "registry.gitlab.com/org/audit-log",
+    "kustomize": "apps/audit-log/overlays/prod",
+    "slack_channel": "#dev-security"
+  },
+  {
+    "key": "FraudDetection",
+    "watch_dir": "example/src/workers/Fraud",
+    "image": "registry.gitlab.com/org/fraud-detection",
+    "kustomize": "apps/workers/fraud/overlays/prod",
+    "slack_channel": "#dev-security"
+  },
+  {
+    "key": "RecommendationEngine",
+    "watch_dir": "example/src/Recommendations",
+    "image": "registry.gitlab.com/org/recommendations",
+    "kustomize": "apps/recommendations/overlays/prod",
+    "slack_channel": "#dev-data"
+  },
+  {
+    "key": "PartnerAPI",
+    "watch_dir": "example/src/PartnerAPI",
+    "image": "registry.gitlab.com/org/partner-api",
+    "kustomize": "apps/partner-api/overlays/prod",
+    "slack_channel": "#dev-partners"
+  },
+  {
+    "key": "SubscriptionService",
+    "watch_dir": "example/src/Subscriptions",
+    "image": "registry.gitlab.com/org/subscriptions",
+    "kustomize": "apps/subscriptions/overlays/prod",
+    "slack_channel": "#dev-billing"
+  },
+  {
+    "key": "MediaTranscoder",
+    "watch_dir": "example/src/workers/Transcoder",
+    "image": "registry.gitlab.com/org/media-transcoder",
+    "kustomize": "apps/workers/transcoder/overlays/prod",
+    "slack_channel": "#dev-media"
+  },
+  {
+    "key": "MarketingDashboard",
+    "watch_dir": "example/src/frontend/MarketingDashboard",
+    "image": "registry.gitlab.com/org/marketing-dashboard",
+    "kustomize": "apps/frontend/marketing-dashboard/overlays/prod",
+    "slack_channel": "#dev-marketing"
+  },
+  {
+    "key": "CRMIntegration",
+    "watch_dir": "example/src/CRM",
+    "image": "registry.gitlab.com/org/crm-integration",
+    "kustomize": "apps/crm/overlays/prod",
+    "slack_channel": "#dev-marketing"
+  },
+  {
+    "key": "GeocodingService",
+    "watch_dir": "example/src/Geocoding",
+    "image": "registry.gitlab.com/org/geocoding",
+    "kustomize": "apps/geocoding/overlays/prod",
+    "slack_channel": "#dev-platform"
+  },
+  {
+    "key": "RateLimiter",
+    "watch_dir": "example/src/RateLimiter",
+    "image": "registry.gitlab.com/org/rate-limiter",
+    "kustomize": "apps/rate-limiter/overlays/prod",
+    "slack_channel": "#dev-platform"
+  },
+  {
+    "key": "PDFGenerator",
+    "watch_dir": "example/src/workers/PDF",
+    "image": "registry.gitlab.com/org/pdf-generator",
+    "kustomize": "apps/workers/pdf/overlays/prod",
+    "slack_channel": "#dev-platform"
+  },
+  {
+    "key": "LocalizationService",
+    "watch_dir": "example/src/Localization",
+    "image": "registry.gitlab.com/org/localization",
+    "kustomize": "apps/localization/overlays/prod",
+    "slack_channel": "#dev-frontend"
+  },
+  {
+    "key": "EventBus",
+    "watch_dir": "example/src/EventBus",
+    "image": "registry.gitlab.com/org/event-bus",
+    "kustomize": "apps/event-bus/overlays/prod",
+    "slack_channel": "#dev-platform"
+  },
+  {
+    "key": "MLModelServing",
+    "watch_dir": "example/src/ML/Serving",
+    "image": "registry.gitlab.com/org/ml-serving",
+    "kustomize": "apps/ml/serving/overlays/prod",
+    "slack_channel": "#dev-data"
+  },
+  {
+    "key": "ABTestingService",
+    "watch_dir": "example/src/ABTesting",
+    "image": "registry.gitlab.com/org/ab-testing",
+    "kustomize": "apps/ab-testing/overlays/prod",
+    "slack_channel": "#dev-marketing"
+  },
+  {
+    "key": "VideoStreamingAPI",
+    "watch_dir": "example/src/VideoStreaming",
+    "image": "registry.gitlab.com/org/video-streaming",
+    "kustomize": "apps/video/overlays/prod",
+    "slack_channel": "#dev-media"
+  },
+  {
+    "key": "LegacySOAPGateway",
+    "watch_dir": "example/src/LegacyGateway",
+    "image": "registry.gitlab.com/org/legacy-gateway",
+    "kustomize": "apps/legacy/overlays/prod",
+    "slack_channel": "#dev-legacy"
+  },
+  {
+    "key": "GraphQLFederation",
+    "watch_dir": "example/src/GraphQL",
+    "image": "registry.gitlab.com/org/graphql-fed",
+    "kustomize": "apps/graphql/overlays/prod",
+    "slack_channel": "#dev-frontend"
+  }
+]
