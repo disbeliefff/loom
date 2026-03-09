@@ -62,7 +62,7 @@ func Execute() {
 	}
 }
 
-func runGenerate(cmd *cobra.Command, args []string) error {
+func runGenerate(_ *cobra.Command, _ []string) error {
 	logger.Init(debug)
 
 	slog.Debug("Loading configurations", "config", configPath, "services", servicesPath)
@@ -102,13 +102,13 @@ func runGenerate(cmd *cobra.Command, args []string) error {
 	slog.Warn("No strategies matched the current environment")
 	if outputPath != "" {
 		fallback := "stages:\n  - no-op\nno-op:\n  stage: no-op\n  script:\n    - echo 'No strategies matched'"
-		return os.WriteFile(outputPath, []byte(fallback), 0644)
+		return os.WriteFile(outputPath, []byte(fallback), 0600)
 	}
 	fmt.Println("No strategies matched")
 	return nil
 }
 
-func runValidate(cmd *cobra.Command, args []string) error {
+func runValidate(_ *cobra.Command, _ []string) error {
 	logger.Init(debug)
 
 	slog.Info("Validating configurations", "config", configPath, "services", servicesPath)

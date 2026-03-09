@@ -34,7 +34,7 @@ func RenderPipeline(templatePath string, jobs []models.Job, ctx models.PipelineC
 	}
 
 	if outputPath != "" {
-		if err := os.WriteFile(outputPath, buf.Bytes(), 0644); err != nil {
+		if err := os.WriteFile(outputPath, buf.Bytes(), 0600); err != nil {
 			return fmt.Errorf("failed to write output to file '%s': %w", outputPath, err)
 		}
 	} else {
