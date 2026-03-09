@@ -20,9 +20,9 @@ func GetChangedFiles(repoPath, beforeSha, currentSha string) ([]string, error) {
 
 	var currentObj *object.Commit
 	if currentSha == "" {
-		headRef, err := repo.Head()
-		if err != nil {
-			return nil, fmt.Errorf("failed to get HEAD: %w", err)
+		headRef, errHead := repo.Head()
+		if errHead != nil {
+			return nil, fmt.Errorf("failed to get HEAD: %w", errHead)
 		}
 		currentObj, err = repo.CommitObject(headRef.Hash())
 		if err != nil {

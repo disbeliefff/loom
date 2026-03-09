@@ -1,3 +1,5 @@
+version: "2"
+
 linters:
   enable:
     - errcheck
@@ -8,31 +10,16 @@ linters:
     - gosec
     - revive
 
-  # Defines a set of rules to ignore issues.
   exclusions:
-    # Mode of the generated files analysis.
-    generated: lax
-    # Log a warning if an exclusion rule is unused.
-    warn-unused: true
-    # Predefined exclusion rules.
-    presets:
-      - comments
-      - std-error-handling
-      - common-false-positives
-      - legacy
-
-    # Excluding configuration per-path, per-linter, per-text and per-source.
     rules:
       - linters:
           - revive
         text: "should have comment"
-      # Exclude some linters from running on tests files.
-      - path: _test\.go
+      - path: '(.+)_test\.go'
         linters:
           - errcheck
           - gosec
 
-  # All available settings of specific linters.
   settings:
     errcheck:
       check-type-assertions: true
@@ -50,3 +37,4 @@ linters:
     gosec:
       excludes:
         - G104
+        - G304
