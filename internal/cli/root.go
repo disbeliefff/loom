@@ -67,8 +67,15 @@ func runGenerate(_ *cobra.Command, _ []string) error {
 
 	slog.Debug("Loading configurations", "config", configPath, "services", servicesPath)
 
-	cfg := config.MustLoad(configPath)
-	services := config.MustLoadServices(servicesPath)
+	cfg, err := config.Load(configPath)
+	if err != nil {
+		return err
+	}
+
+	services, err := config.LoadServices(servicesPath)
+	if err != nil {
+		return err
+	}
 	ctx := getPipelineContext()
 
 	slog.Debug("Pipeline Context initialized", "context", fmt.Sprintf("%+v", ctx))
@@ -113,8 +120,15 @@ func runValidate(_ *cobra.Command, _ []string) error {
 
 	slog.Info("Validating configurations", "config", configPath, "services", servicesPath)
 
-	cfg := config.MustLoad(configPath)
-	services := config.MustLoadServices(servicesPath)
+	cfg, err := config.Load(configPath)
+	if err != nil {
+		return err
+	}
+
+	services, err := config.LoadServices(servicesPath)
+	if err != nil {
+		return err
+	}
 	ctx := getPipelineContext()
 
 	for _, strategy := range cfg.Strategies {

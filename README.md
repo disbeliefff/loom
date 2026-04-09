@@ -31,6 +31,8 @@ This registry maps your monorepo source directories (`watch_dir`) to your Docker
 ### 2. Define your Strategies (`pipeline-strategies.yaml`)
 Define the rules for when to trigger different pipeline templates. Loom uses a powerful expression engine (`expr`) to evaluate GitLab CI variables.
 
+Template paths are resolved relative to the directory that contains the config file passed via `--config`. Absolute paths still work unchanged.
+
 ```yaml
 strategies:
   # 1. Automatic build on the 'dev' branch (detects changed files)
@@ -41,7 +43,7 @@ strategies:
       before_sha: '{{ .Context.BeforeSHA }}'
       current_sha: '{{ .Context.CommitSHA }}'
       watch_field: "watch_dir"
-    template: ".gitlab/templates/build.tmpl"
+    template: "templates/build.tmpl"
 
   # 2. Production release triggered by a Git Tag (e.g., AccountingAPI/v1.0.0)
   - name: "tag-release"
@@ -49,7 +51,7 @@ strategies:
     selector:
       type: "regex-tag"
       pattern: '^{{ .Service.Key }}/.*$'
-    template: ".gitlab/templates/release.tmpl"
+    template: "templates/release.tmpl"
 
   # 3. Manual Web UI triggers (e.g., passing DEPLOY_AUTHSERVICE=true)
   - name: "manual"
@@ -57,7 +59,7 @@ strategies:
     selector:
       type: "env-match"
       prefix: "DEPLOY_"
-    template: ".gitlab/templates/manual.tmpl"
+    template: "templates/manual.tmpl"
 ```
 
 ### 3. Create your Pipeline Template (`.gitlab/templates/build.tmpl`)

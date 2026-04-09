@@ -7,7 +7,7 @@ strategies:
       before_sha: '{{ .Context.BeforeSHA }}'
       current_sha: '{{ .Context.CommitSHA }}'
       watch_field: "watch_dir"
-    template: "example/templates/build.tmpl"
+    template: "templates/build.tmpl"
 
   # 2. Production Release - Selects service matching the tag name (e.g. AuthService/v1.0.0)
   - name: "tag-release"
@@ -15,7 +15,7 @@ strategies:
     selector:
       type: "regex-tag"
       pattern: '^{{ .Service.Key }}/.*$'
-    template: "example/templates/release.tmpl"
+    template: "templates/release.tmpl"
 
   # 3. Manual Deploy - Selects services where DEPLOY_<SERVICE_KEY>=true
   - name: "manual"
@@ -23,4 +23,4 @@ strategies:
     selector:
       type: "env-match"
       prefix: "DEPLOY_"
-    template: "example/templates/manual.tmpl"
+    template: "templates/manual.tmpl"
