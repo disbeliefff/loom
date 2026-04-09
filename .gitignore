@@ -26,3 +26,5 @@ go.work
 
 # Example generated files
 example/generated-child.yml
+
+.codex
