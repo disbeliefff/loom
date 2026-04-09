@@ -23,6 +23,7 @@ type SelectorConfig struct {
 	Type       string `yaml:"type"`
 	BeforeSHA  string `yaml:"before_sha"`
 	CurrentSHA string `yaml:"current_sha"`
+	RepoRoot   string `yaml:"repo_root"`
 	WatchField string `yaml:"watch_field"`
 	Pattern    string `yaml:"pattern"`
 	Prefix     string `yaml:"prefix"`
@@ -39,6 +40,7 @@ type PipelineContext struct {
 	CommitBranch   string
 	PipelineID     string
 	PipelineSource string
+	RepoRoot       string
 	BeforeSHA      string
 	CommitSHA      string
 	BuildTag       string

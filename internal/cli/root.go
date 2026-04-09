@@ -18,6 +18,7 @@ var (
 	configPath   string
 	servicesPath string
 	outputPath   string
+	repoRoot     string
 	debug        bool
 )
 
@@ -36,6 +37,7 @@ func NewRootCommand() *cobra.Command {
 	generateCmd.Flags().StringVarP(&configPath, "config", "c", "pipeline-strategies.yaml", "Path to pipeline-strategies.yaml")
 	generateCmd.Flags().StringVarP(&servicesPath, "services", "s", "services.json", "Path to services.json")
 	generateCmd.Flags().StringVarP(&outputPath, "out", "o", "", "Output file path (default is stdout)")
+	generateCmd.Flags().StringVarP(&repoRoot, "repo-root", "r", "", "Explicit Git repository root path (default: $CI_PROJECT_DIR or cwd)")
 	generateCmd.Flags().BoolVarP(&debug, "debug", "d", false, "Enable debug logging")
 
 	validateCmd := &cobra.Command{
@@ -46,6 +48,7 @@ func NewRootCommand() *cobra.Command {
 
 	validateCmd.Flags().StringVarP(&configPath, "config", "c", "pipeline-strategies.yaml", "Path to pipeline-strategies.yaml")
 	validateCmd.Flags().StringVarP(&servicesPath, "services", "s", "services.json", "Path to services.json")
+	validateCmd.Flags().StringVarP(&repoRoot, "repo-root", "r", "", "Explicit Git repository root path (default: $CI_PROJECT_DIR or cwd)")
 	validateCmd.Flags().BoolVarP(&debug, "debug", "d", false, "Enable debug logging")
 
 	rootCmd.AddCommand(generateCmd)
@@ -76,7 +79,10 @@ func runGenerate(_ *cobra.Command, _ []string) error {
 	if err != nil {
 		return err
 	}
-	ctx := getPipelineContext()
+	ctx, err := getPipelineContext()
+	if err != nil {
+		return err
+	}
 
 	slog.Debug("Pipeline Context initialized", "context", fmt.Sprintf("%+v", ctx))
 
@@ -129,7 +135,10 @@ func runValidate(_ *cobra.Command, _ []string) error {
 	if err != nil {
 		return err
 	}
-	ctx := getPipelineContext()
+	ctx, err := getPipelineContext()
+	if err != nil {
+		return err
+	}
 
 	for _, strategy := range cfg.Strategies {
 		if strategy.Name == "" {
@@ -160,7 +169,19 @@ func runValidate(_ *cobra.Command, _ []string) error {
 	return nil
 }
 
-func getPipelineContext() models.PipelineContext {
+func getPipelineContext() (models.PipelineContext, error) {
+	resolvedRepoRoot := repoRoot
+	if resolvedRepoRoot == "" {
+		resolvedRepoRoot = os.Getenv("CI_PROJECT_DIR")
+	}
+	if resolvedRepoRoot == "" {
+		pwd, err := os.Getwd()
+		if err != nil {
+			return models.PipelineContext{}, fmt.Errorf("failed to get current working directory: %w", err)
+		}
+		resolvedRepoRoot = pwd
+	}
+
 	return models.PipelineContext{
 		CommitTag:      os.Getenv("CI_COMMIT_TAG"),
 		CommitBranch:   os.Getenv("CI_COMMIT_BRANCH"),
@@ -169,5 +190,6 @@ func getPipelineContext() models.PipelineContext {
 		BeforeSHA:      os.Getenv("CI_COMMIT_BEFORE_SHA"),
 		CommitSHA:      os.Getenv("CI_COMMIT_SHA"),
 		BuildTag:       os.Getenv("BUILD_TAG"),
-	}
+		RepoRoot:       resolvedRepoRoot,
+	}, nil
 }
