@@ -2,6 +2,7 @@ package cli
 
 import (
 	"fmt"
+	"io"
 	"log/slog"
 	"os"
 
@@ -23,8 +24,10 @@ var (
 
 func NewRootCommand() *cobra.Command {
 	rootCmd := &cobra.Command{
-		Use:   "loom",
-		Short: "loom is a tool for dynamically generating GitLab CI child pipelines",
+		Use:           "loom",
+		Short:         "loom is a tool for dynamically generating GitLab CI child pipelines",
+		SilenceUsage:  true,
+		SilenceErrors: true,
 	}
 
 	generateCmd := &cobra.Command{
@@ -56,10 +59,19 @@ func NewRootCommand() *cobra.Command {
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 func Execute() {
-	if err := NewRootCommand().Execute(); err != nil {
-		fmt.Println(err)
+	if err := execute(os.Args[1:], os.Stdout, os.Stderr); err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
 	}
+}
+
+func execute(args []string, stdout, stderr io.Writer) error {
+	cmd := NewRootCommand()
+	cmd.SetArgs(args)
+	cmd.SetOut(stdout)
+	cmd.SetErr(stderr)
+
+	return cmd.Execute()
 }
 
 func runGenerate(_ *cobra.Command, _ []string) error {
