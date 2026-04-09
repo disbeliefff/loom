@@ -10,12 +10,16 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestMustLoad(t *testing.T) {
+func TestLoad(t *testing.T) {
 	tempDir := t.TempDir()
 
 	validConfigPath := filepath.Join(tempDir, "valid-config.yaml")
 	invalidConfigPath := filepath.Join(tempDir, "invalid-config.yaml")
 	missingConfigPath := filepath.Join(tempDir, "missing-config.yaml")
+	configDir := filepath.Join(tempDir, ".ci-templates", "templates", "monorepo")
+	require.NoError(t, os.MkdirAll(configDir, 0755))
+
+	relativeConfigPath := filepath.Join(configDir, "pipeline-strategies.yaml")
 
 	validYAML := []byte(`
 strategies:
@@ -37,33 +41,52 @@ strategies:
 `)
 	require.NoError(t, os.WriteFile(invalidConfigPath, invalidYAML, 0644))
 
+	relativeYAML := []byte(`
+strategies:
+  - name: "dev-build"
+    condition: "true"
+    selector:
+      type: "git-diff"
+      watch_field: "watch_dir"
+    template: "pipeline.tmpl"
+`)
+	require.NoError(t, os.WriteFile(relativeConfigPath, relativeYAML, 0644))
+
 	t.Run("Valid Config", func(t *testing.T) {
-		cfg := config.MustLoad(validConfigPath)
+		cfg, err := config.Load(validConfigPath)
+		require.NoError(t, err)
 		require.NotNil(t, cfg)
 		require.Len(t, cfg.Strategies, 1)
 
 		strategy := cfg.Strategies[0]
 		assert.Equal(t, "test-strategy", strategy.Name)
 		assert.Equal(t, "true", strategy.Condition)
-		assert.Equal(t, "test.tmpl", strategy.Template)
+		assert.Equal(t, filepath.Join(tempDir, "test.tmpl"), strategy.Template)
 		assert.Equal(t, "git-diff", strategy.Selector.Type)
 		assert.Equal(t, "custom_dir", strategy.Selector.WatchField)
 	})
 
-	t.Run("Invalid Config Panics", func(t *testing.T) {
-		assert.Panics(t, func() {
-			config.MustLoad(invalidConfigPath)
-		})
+	t.Run("Relative template path is resolved against config directory", func(t *testing.T) {
+		cfg, err := config.Load(relativeConfigPath)
+		require.NoError(t, err)
+		require.Len(t, cfg.Strategies, 1)
+		assert.Equal(t, filepath.Join(configDir, "pipeline.tmpl"), cfg.Strategies[0].Template)
 	})
 
-	t.Run("Missing Config Panics", func(t *testing.T) {
-		assert.Panics(t, func() {
-			config.MustLoad(missingConfigPath)
-		})
+	t.Run("Invalid Config Returns Error", func(t *testing.T) {
+		_, err := config.Load(invalidConfigPath)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "failed to parse config file")
+	})
+
+	t.Run("Missing Config Returns Error", func(t *testing.T) {
+		_, err := config.Load(missingConfigPath)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "failed to read config file")
 	})
 }
 
-func TestMustLoadServices(t *testing.T) {
+func TestLoadServices(t *testing.T) {
 	tempDir := t.TempDir()
 
 	validServicesPath := filepath.Join(tempDir, "valid-services.json")
@@ -92,7 +115,8 @@ func TestMustLoadServices(t *testing.T) {
 	require.NoError(t, os.WriteFile(invalidServicesPath, invalidJSON, 0644))
 
 	t.Run("Valid Services", func(t *testing.T) {
-		services := config.MustLoadServices(validServicesPath)
+		services, err := config.LoadServices(validServicesPath)
+		require.NoError(t, err)
 
 		// The second item in JSON is missing a "key", so it should be skipped.
 		require.Len(t, services, 2)
@@ -106,15 +130,15 @@ func TestMustLoadServices(t *testing.T) {
 		assert.Equal(t, "src/bad_key/", services[1].Raw["watch_dir"])
 	})
 
-	t.Run("Invalid Services JSON Panics", func(t *testing.T) {
-		assert.Panics(t, func() {
-			config.MustLoadServices(invalidServicesPath)
-		})
+	t.Run("Invalid Services JSON Returns Error", func(t *testing.T) {
+		_, err := config.LoadServices(invalidServicesPath)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "failed to parse services file")
 	})
 
-	t.Run("Missing Services JSON Panics", func(t *testing.T) {
-		assert.Panics(t, func() {
-			config.MustLoadServices(missingServicesPath)
-		})
+	t.Run("Missing Services JSON Returns Error", func(t *testing.T) {
+		_, err := config.LoadServices(missingServicesPath)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "failed to read services file")
 	})
 }
