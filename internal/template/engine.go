@@ -15,12 +15,12 @@ import (
 func RenderPipeline(templatePath string, jobs []models.Job, ctx models.PipelineContext, outputPath string) error {
 	tmplContent, err := os.ReadFile(templatePath)
 	if err != nil {
-		return fmt.Errorf("failed to read template file '%s': %w", templatePath, err)
+		return fmt.Errorf("read template file %q: %w", templatePath, err)
 	}
 
 	tmpl, err := template.New("pipeline").Funcs(sprig.TxtFuncMap()).Parse(string(tmplContent))
 	if err != nil {
-		return fmt.Errorf("failed to parse template: %w", err)
+		return fmt.Errorf("parse template: %w", err)
 	}
 
 	data := models.TemplateData{
@@ -30,12 +30,12 @@ func RenderPipeline(templatePath string, jobs []models.Job, ctx models.PipelineC
 
 	var buf bytes.Buffer
 	if err := tmpl.Execute(&buf, data); err != nil {
-		return fmt.Errorf("failed to execute template: %w", err)
+		return fmt.Errorf("execute template: %w", err)
 	}
 
 	if outputPath != "" {
-		if err := os.WriteFile(outputPath, buf.Bytes(), 0600); err != nil {
-			return fmt.Errorf("failed to write output to file '%s': %w", outputPath, err)
+		if err := os.WriteFile(outputPath, buf.Bytes(), 0644); err != nil {
+			return fmt.Errorf("write output to file %q: %w", outputPath, err)
 		}
 	} else {
 		fmt.Print(buf.String())

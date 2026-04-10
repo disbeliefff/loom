@@ -78,7 +78,7 @@ func TestApply_RegexTag(t *testing.T) {
 	}
 	_, err = selector.Apply(cfgInvalid, ctxMatch, services)
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "failed to render pattern template")
+	assert.Contains(t, err.Error(), "render pattern template")
 }
 
 func createTempGitRepoWithFiles(t *testing.T) (string, []string) {
@@ -206,5 +206,5 @@ func TestApply_MissingType(t *testing.T) {
 	cfg := models.SelectorConfig{Type: ""}
 	_, err := selector.Apply(cfg, models.PipelineContext{}, []models.Service{})
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "selector 'type' is missing")
+	assert.Contains(t, err.Error(), "selector type is missing")
 }

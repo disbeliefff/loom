@@ -93,12 +93,12 @@ jobs:
 	t.Run("Missing template file", func(t *testing.T) {
 		err := template.RenderPipeline("missing.tmpl", jobs, ctx, outputPath)
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), "failed to read template file")
+		assert.Contains(t, err.Error(), "read template file")
 	})
 
 	t.Run("Execution error in template", func(t *testing.T) {
 		err := template.RenderPipeline(invalidTmplPath, jobs, ctx, outputPath)
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), "failed to execute template")
+		assert.Contains(t, err.Error(), "execute template")
 	})
 }
