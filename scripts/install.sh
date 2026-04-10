@@ -74,7 +74,14 @@ download_and_install() {
     tmp_dir=$(mktemp -d)
     trap 'rm -rf "$tmp_dir"' EXIT
 
-    if ! curl -sL --fail "$download_url" | tar -xz -C "$tmp_dir" "$BIN_NAME"; then
+    # Check if the URL returns a 200 OK before piping to tar
+    local http_code
+    http_code=$(curl -sL -w "%{http_code}" -o /dev/null "$download_url")
+    if [[ "$http_code" != "200" ]]; then
+        log_error "Release asset not found at $download_url (HTTP $http_code). Note: Pre-compiled binaries might not be available for version $VERSION yet."
+    fi
+
+    if ! curl -sL "$download_url" | tar -xz -C "$tmp_dir" "$BIN_NAME"; then
         log_error "Failed to download or extract the binary. Please check if the release asset exists."
     fi
 
