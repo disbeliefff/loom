@@ -44,14 +44,14 @@ func LoadServices(path string) ([]models.Service, error) {
 		return nil, fmt.Errorf("read services file %q: %w", path, err)
 	}
 
-	var rawServices []map[string]any
+	var rawServices []map[string]string
 	if err := json.Unmarshal(data, &rawServices); err != nil {
 		return nil, fmt.Errorf("parse services file %q: %w", path, err)
 	}
 
 	services := make([]models.Service, 0, len(rawServices))
 	for _, raw := range rawServices {
-		keyVal, ok := raw["key"].(string)
+		keyVal, ok := raw["key"]
 		if !ok || keyVal == "" {
 			continue // Skip elements without a valid "key" field
 		}

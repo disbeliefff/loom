@@ -123,15 +123,15 @@ func TestApply_GitDiff(t *testing.T) {
 	services := []models.Service{
 		{
 			Key: "auth-service",
-			Raw: map[string]any{"watch_dir": "src/auth"},
+			Raw: map[string]string{"watch_dir": "src/auth"},
 		},
 		{
 			Key: "billing-service",
-			Raw: map[string]any{"watch_dir": "src/billing"},
+			Raw: map[string]string{"watch_dir": "src/billing"},
 		},
 		{
 			Key: "other-service",
-			Raw: map[string]any{"watch_dir": ""}, // Missing watch dir
+			Raw: map[string]string{"watch_dir": ""}, // Missing watch dir
 		},
 	}
 
@@ -167,11 +167,11 @@ func TestApply_GitDiff_ContextRepoRoot(t *testing.T) {
 	services := []models.Service{
 		{
 			Key: "auth-service",
-			Raw: map[string]any{"watch_dir": "src/auth"},
+			Raw: map[string]string{"watch_dir": "src/auth"},
 		},
 		{
 			Key: "billing-service",
-			Raw: map[string]any{"watch_dir": "src/billing"},
+			Raw: map[string]string{"watch_dir": "src/billing"},
 		},
 	}
 
