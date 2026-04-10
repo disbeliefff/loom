@@ -77,7 +77,7 @@ func Execute() {
 		if app.logger != nil {
 			app.logger.Error("execution failed", "error", err)
 		} else {
-			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			slog.Error("execution failed", "error", err)
 		}
 		os.Exit(1)
 	}
