@@ -6,6 +6,8 @@
 
 ## Installation
 
+### Native Linux / macOS
+
 The quickest way to install the Loom CLI natively on Linux or macOS (supports bash, zsh, and fish via curl):
 
 ```bash
@@ -13,6 +15,18 @@ curl -sL https://raw.githubusercontent.com/disbeliefff/loom/main/scripts/install
 ```
 
 Alternatively, you can download the latest pre-compiled binary manually from the [GitHub Releases page](https://github.com/disbeliefff/loom/releases).
+
+### Using Docker
+
+You can also run Loom via Docker. The image is published to the GitHub Container Registry (`ghcr.io`):
+
+```bash
+# Pull the latest image
+docker pull ghcr.io/disbeliefff/loom:latest
+
+# Run loom (mount your current directory to the container)
+docker run --rm -v $(pwd):/workspace -w /workspace ghcr.io/disbeliefff/loom:latest generate --config ...
+```
 
 ---
 
