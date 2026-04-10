@@ -9,8 +9,7 @@ import (
 	"strings"
 
 	"github.com/disbeliefff/loom/internal/models"
-	"gopkg.in/yaml.v3"
-	kyaml "sigs.k8s.io/yaml"
+	"sigs.k8s.io/yaml"
 )
 
 var safeKeyRegex = regexp.MustCompile(`[^a-zA-Z0-9_-]`)
@@ -50,7 +49,7 @@ func LoadServices(path string) ([]models.Service, error) {
 	ext := strings.ToLower(filepath.Ext(path))
 
 	if ext == ".yaml" || ext == ".yml" {
-		if err := kyaml.Unmarshal(data, &rawServices); err != nil {
+		if err := yaml.Unmarshal(data, &rawServices); err != nil {
 			return nil, fmt.Errorf("parse yaml services file %q: %w", path, err)
 		}
 	} else {
