@@ -70,17 +70,16 @@ download_and_install() {
     local download_url="https://github.com/$REPO/releases/download/${VERSION}/${BIN_NAME}_${OS_NAME}_${ARCH_NAME}.tar.gz"
     log_info "Downloading from $download_url..."
 
-    local tmp_dir
-    tmp_dir=$(mktemp -d)
+    TMP_DIR=$(mktemp -d)
     
-    # Define a cleanup function that doesn't rely on local variables directly
-    cleanup() {
-        if [[ -d "${1:-}" ]]; then
-            rm -rf "$1"
-        fi
-    }
-    # Pass the value of tmp_dir to the cleanup function
-    trap "cleanup \"$tmp_dir\"" EXIT
+# Global cleanup logic to avoid local variable scope issues with bash traps and set -u
+TMP_DIR=""
+cleanup() {
+    if [[ -n "$TMP_DIR" ]] && [[ -d "$TMP_DIR" ]]; then
+        rm -rf "$TMP_DIR"
+    fi
+}
+trap cleanup EXIT
 
     # Check if the URL returns a 200 OK before piping to tar
     local http_code
@@ -89,13 +88,13 @@ download_and_install() {
         log_error "Release asset not found at $download_url (HTTP $http_code). Note: Pre-compiled binaries might not be available for version $VERSION yet."
     fi
 
-    if ! curl -sL "$download_url" | tar -xz -C "$tmp_dir" "$BIN_NAME"; then
+    if ! curl -sL "$download_url" | tar -xz -C "$TMP_DIR" "$BIN_NAME"; then
         log_error "Failed to download or extract the binary. Please check if the release asset exists."
     fi
 
     log_info "Installing to $INSTALL_DIR..."
 
-    local install_cmd="mv \"$tmp_dir/$BIN_NAME\" \"$INSTALL_DIR/$BIN_NAME\""
+    local install_cmd="mv \"$TMP_DIR/$BIN_NAME\" \"$INSTALL_DIR/$BIN_NAME\""
 
     if [[ ! -w "$INSTALL_DIR" ]]; then
         log_info "Elevated permissions required to write to $INSTALL_DIR. Prompting for sudo..."
