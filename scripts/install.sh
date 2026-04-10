@@ -72,7 +72,7 @@ download_and_install() {
 
     local tmp_dir
     tmp_dir=$(mktemp -d)
-    trap 'rm -rf "${tmp_dir:-/tmp/loom-install-fallback}"' EXIT
+    trap "rm -rf \"$tmp_dir\"" EXIT
 
     # Check if the URL returns a 200 OK before piping to tar
     local http_code
