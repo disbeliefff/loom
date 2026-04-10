@@ -4,7 +4,19 @@
 
 ---
 
-##  GitOps Example (FluxCD)
+## Installation
+
+The quickest way to install the Loom CLI natively on Linux or macOS (supports bash, zsh, and fish via curl):
+
+```bash
+curl -sL https://raw.githubusercontent.com/disbeliefff/loom/main/scripts/install.sh | bash
+```
+
+Alternatively, you can download the latest pre-compiled binary manually from the [GitHub Releases page](https://github.com/disbeliefff/loom/releases).
+
+---
+
+## GitOps Example (FluxCD)
 
 Let's look at how to use Loom to build an automated GitOps pipeline using FluxCD.
 
