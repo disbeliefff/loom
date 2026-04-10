@@ -1,15 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Configuration
 REPO="disbeliefff/loom"
 BIN_NAME="loom"
 INSTALL_DIR="/usr/local/bin"
 
-# --- Utility Functions ---
-
 setup_colors() {
-    # Check if we're running in a terminal that supports colors
     if [[ -t 1 ]] && command -v tput >/dev/null 2>&1; then
         RED=$(tput setaf 1)
         GREEN=$(tput setaf 2)
@@ -28,11 +24,10 @@ setup_colors() {
 }
 
 log_info() { echo -e "${BLUE}${BOLD}==>${RESET} ${BOLD}$1${RESET}"; }
-log_success() { echo -e "${GREEN}${BOLD}==> ✅ $1${RESET}"; }
-log_warn() { echo -e "${YELLOW}${BOLD}==> ⚠️ Warning: $1${RESET}"; }
-log_error() { echo -e "${RED}${BOLD}==> ❌ Error: $1${RESET}" >&2; exit 1; }
+log_success() { echo -e "${GREEN}${BOLD}==> Success: $1${RESET}"; }
+log_warn() { echo -e "${YELLOW}${BOLD}==>  Warning: $1${RESET}"; }
+log_error() { echo -e "${RED}${BOLD}==> Error: $1${RESET}" >&2; exit 1; }
 
-# --- Core Logic ---
 
 check_dependencies() {
     local deps=("curl" "tar" "grep" "sed")
@@ -64,7 +59,7 @@ detect_system() {
 get_latest_version() {
     log_info "Fetching latest release version for $REPO..."
     VERSION=$(curl -sL "https://api.github.com/repos/$REPO/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
-    
+
     if [[ -z "$VERSION" ]]; then
         log_error "Failed to fetch the latest version. GitHub API rate limit might be exceeded."
     fi
@@ -75,22 +70,18 @@ download_and_install() {
     local download_url="https://github.com/$REPO/releases/download/${VERSION}/${BIN_NAME}_${OS_NAME}_${ARCH_NAME}.tar.gz"
     log_info "Downloading from $download_url..."
 
-    # Use a secure temporary directory
     local tmp_dir
     tmp_dir=$(mktemp -d)
-    # Ensure cleanup on exit
     trap 'rm -rf "$tmp_dir"' EXIT
 
-    # Download and extract just the binary
     if ! curl -sL --fail "$download_url" | tar -xz -C "$tmp_dir" "$BIN_NAME"; then
         log_error "Failed to download or extract the binary. Please check if the release asset exists."
     fi
 
     log_info "Installing to $INSTALL_DIR..."
-    
+
     local install_cmd="mv \"$tmp_dir/$BIN_NAME\" \"$INSTALL_DIR/$BIN_NAME\""
-    
-    # Prompt for sudo if we don't have write access to the installation directory
+
     if [[ ! -w "$INSTALL_DIR" ]]; then
         log_info "Elevated permissions required to write to $INSTALL_DIR. Prompting for sudo..."
         install_cmd="sudo $install_cmd"
@@ -100,7 +91,6 @@ download_and_install() {
         log_error "Failed to move the binary to $INSTALL_DIR"
     fi
 
-    # Make the binary executable
     local chmod_cmd="chmod +x \"$INSTALL_DIR/$BIN_NAME\""
     if [[ ! -w "$INSTALL_DIR/$BIN_NAME" ]]; then
         chmod_cmd="sudo $chmod_cmd"
@@ -111,15 +101,14 @@ download_and_install() {
 main() {
     setup_colors
     log_info "Starting installation of $BIN_NAME..."
-    
+
     check_dependencies
     detect_system
     get_latest_version
     download_and_install
-    
+
     log_success "Successfully installed $BIN_NAME to $INSTALL_DIR/$BIN_NAME"
     log_success "Run '${BOLD}$BIN_NAME --help${RESET}' to get started!"
 }
 
-# Run the main function with all script arguments
 main "$@"
