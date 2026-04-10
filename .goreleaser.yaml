@@ -33,7 +33,7 @@ nfpms:
     homepage: https://github.com/disbeliefff/loom
     maintainer: Disbeliefff
     description: "Loom CLI"
-    license: MIT
+    license: GPL-3.0
     formats:
       - deb
       - rpm
