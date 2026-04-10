@@ -141,7 +141,7 @@ stages:
 
 generate:
   stage: setup
-  image: registry.gitlab.com/your-org/devops/loom:latest
+  image: ghcr.io/disbeliefff/loom:latest
   script:
     - loom generate --config .gitlab/pipeline-strategies.yaml --services services.json --out child-pipeline.yml
   artifacts:
