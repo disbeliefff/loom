@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"testing"
 
+	"github.com/disbeliefff/loom/pkg/logger"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -15,7 +16,9 @@ func TestExecuteReturnsConfigLoadErrors(t *testing.T) {
 
 		var err error
 		require.NotPanics(t, func() {
-			err = execute([]string{
+			app := NewApp()
+			app.logger = logger.New(false)
+			err = app.execute([]string{
 				"generate",
 				"--config", "./missing.yaml",
 				"--services", "./services.json",
@@ -34,7 +37,9 @@ func TestExecuteReturnsConfigLoadErrors(t *testing.T) {
 
 		var err error
 		require.NotPanics(t, func() {
-			err = execute([]string{
+			app := NewApp()
+			app.logger = logger.New(false)
+			err = app.execute([]string{
 				"validate",
 				"--config", "../../example/pipeline-strategies.yaml",
 				"--services", "./missing-services.json",

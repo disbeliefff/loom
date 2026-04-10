@@ -5,13 +5,12 @@ import (
 	"os"
 )
 
-// Init configures the default structured logger for the application.
-func Init(debug bool) {
+// New creates and returns a new structured logger for the application.
+func New(debug bool) *slog.Logger {
 	opts := &slog.HandlerOptions{Level: slog.LevelInfo}
 	if debug {
 		opts.Level = slog.LevelDebug
 	}
 
-	logger := slog.New(slog.NewTextHandler(os.Stderr, opts))
-	slog.SetDefault(logger)
+	return slog.New(slog.NewTextHandler(os.Stderr, opts))
 }

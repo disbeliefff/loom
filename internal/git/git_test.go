@@ -79,14 +79,14 @@ func TestGetChangedFiles(t *testing.T) {
 
 	t.Run("Diff between explicit commits", func(t *testing.T) {
 		// Diff between commit 1 (main.go) and commit 2 (add config.yaml)
-		changed, err := git.GetChangedFiles(repoPath, commits[0], commits[1])
+		changed, err := git.NewClient(nil).GetChangedFiles(repoPath, commits[0], commits[1])
 		require.NoError(t, err)
 		assert.ElementsMatch(t, []string{"config.yaml"}, changed)
 	})
 
 	t.Run("Diff with deletion", func(t *testing.T) {
 		// Diff between commit 2 (config.yaml exists) and commit 3 (delete config.yaml)
-		changed, err := git.GetChangedFiles(repoPath, commits[2], commits[3])
+		changed, err := git.NewClient(nil).GetChangedFiles(repoPath, commits[2], commits[3])
 		require.NoError(t, err)
 		assert.ElementsMatch(t, []string{"config.yaml"}, changed)
 	})
@@ -96,13 +96,13 @@ func TestGetChangedFiles(t *testing.T) {
 		// Our HEAD is commit 4 (deleted config.yaml).
 		// HEAD~1 is commit 3 (modified main.go).
 		// So diff between commit 3 and 4 should be "config.yaml"
-		changed, err := git.GetChangedFiles(repoPath, "", "")
+		changed, err := git.NewClient(nil).GetChangedFiles(repoPath, "", "")
 		require.NoError(t, err)
 		assert.ElementsMatch(t, []string{"config.yaml"}, changed)
 	})
 
 	t.Run("Fallback to HEAD~1 when before_sha is invalid 0000", func(t *testing.T) {
-		changed, err := git.GetChangedFiles(repoPath, "0000000000000000000000000000000000000000", commits[2])
+		changed, err := git.NewClient(nil).GetChangedFiles(repoPath, "0000000000000000000000000000000000000000", commits[2])
 		require.NoError(t, err)
 		// commit 2 is "Modify main".
 		// Its parent is commit 1 "Add config".
@@ -112,13 +112,13 @@ func TestGetChangedFiles(t *testing.T) {
 
 	t.Run("Initial commit edge case fallback", func(t *testing.T) {
 		// If current_sha is the initial commit, and before_sha is missing, it should return all files
-		changed, err := git.GetChangedFiles(repoPath, "", commits[0])
+		changed, err := git.NewClient(nil).GetChangedFiles(repoPath, "", commits[0])
 		require.NoError(t, err)
 		assert.ElementsMatch(t, []string{"main.go"}, changed)
 	})
 
 	t.Run("Non-existent repo path", func(t *testing.T) {
-		_, err := git.GetChangedFiles("/path/does/not/exist", "", "")
+		_, err := git.NewClient(nil).GetChangedFiles("/path/does/not/exist", "", "")
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "open git repository")
 	})
@@ -126,7 +126,7 @@ func TestGetChangedFiles(t *testing.T) {
 	t.Run("Non-existent explicit before_sha fails cleanly but falls back", func(t *testing.T) {
 		// Invalid SHA (e.g. valid length but fake hash) will trigger a warning and fallback to parent
 		fakeSha := "abcdefabcdefabcdefabcdefabcdefabcdefabcd"
-		changed, err := git.GetChangedFiles(repoPath, fakeSha, commits[2])
+		changed, err := git.NewClient(nil).GetChangedFiles(repoPath, fakeSha, commits[2])
 		require.NoError(t, err)
 
 		// Fallback means diff between parent of commits[2] and commits[2]
