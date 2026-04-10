@@ -11,10 +11,21 @@ import (
 
 const emptyGitHash = "0000000000000000000000000000000000000000"
 
+type Client struct {
+	logger *slog.Logger
+}
+
+func NewClient(logger *slog.Logger) *Client {
+	if logger == nil {
+		logger = slog.Default()
+	}
+	return &Client{logger: logger}
+}
+
 // GetChangedFiles returns a list of files changed between beforeSha and currentSha.
 // If beforeSha is empty or "0000000000000000000000000000000000000000",
 // it falls back to comparing HEAD with its parent (HEAD~1).
-func GetChangedFiles(repoPath, beforeSha, currentSha string) ([]string, error) {
+func (c *Client) GetChangedFiles(repoPath, beforeSha, currentSha string) ([]string, error) {
 	repo, err := git.PlainOpen(repoPath)
 	if err != nil {
 		return nil, fmt.Errorf("open git repository %q: %w", repoPath, err)
@@ -42,7 +53,7 @@ func GetChangedFiles(repoPath, beforeSha, currentSha string) ([]string, error) {
 
 	isInvalidBeforeSha := beforeSha == "" || beforeSha == emptyGitHash
 	if isInvalidBeforeSha {
-		slog.Info("Invalid or empty before_sha provided, falling back to HEAD~1", "before_sha", beforeSha)
+		c.logger.Info("Invalid or empty before_sha provided, falling back to HEAD~1", "before_sha", beforeSha)
 
 		if currentObj.NumParents() == 0 {
 			// Initial commit has no parents, so all files are "changed"
@@ -59,7 +70,7 @@ func GetChangedFiles(repoPath, beforeSha, currentSha string) ([]string, error) {
 		beforeObj, err = repo.CommitObject(hash)
 		if err != nil {
 			// If we can't find the explicit beforeSha, log warning and try parent fallback as requested
-			slog.Warn("Could not find commit for before_sha, falling back to HEAD~1", "before_sha", beforeSha, "error", err)
+			c.logger.Warn("Could not find commit for before_sha, falling back to HEAD~1", "before_sha", beforeSha, "error", err)
 			if currentObj.NumParents() > 0 {
 				parentHash := currentObj.ParentHashes[0]
 				beforeObj, err = repo.CommitObject(parentHash)

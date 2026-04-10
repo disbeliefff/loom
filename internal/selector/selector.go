@@ -3,6 +3,7 @@ package selector
 import (
 	"bytes"
 	"fmt"
+	"log/slog"
 	"os"
 	"regexp"
 	"strings"
@@ -13,26 +14,44 @@ import (
 	"github.com/disbeliefff/loom/internal/models"
 )
 
+type Evaluator struct {
+	logger *slog.Logger
+	gitCli *git.Client
+}
+
+func NewEvaluator(logger *slog.Logger, gitCli *git.Client) *Evaluator {
+	if logger == nil {
+		logger = slog.Default()
+	}
+	if gitCli == nil {
+		gitCli = git.NewClient(logger)
+	}
+	return &Evaluator{
+		logger: logger,
+		gitCli: gitCli,
+	}
+}
+
 // Apply uses the given SelectorConfig to filter services and return jobs.
 // It switches behavior based on the configured "Type" (e.g., git-diff, regex-tag, env-match).
-func Apply(cfg models.SelectorConfig, ctx models.PipelineContext, services []models.Service) ([]models.Job, error) {
+func (e *Evaluator) Apply(cfg models.SelectorConfig, ctx models.PipelineContext, services []models.Service) ([]models.Job, error) {
 	if cfg.Type == "" {
 		return nil, fmt.Errorf("selector type is missing")
 	}
 
 	switch cfg.Type {
 	case "git-diff":
-		return gitDiff(cfg, ctx, services)
+		return e.gitDiff(cfg, ctx, services)
 	case "regex-tag":
-		return regexTag(cfg, ctx, services)
+		return e.regexTag(cfg, ctx, services)
 	case "env-match":
-		return envMatch(cfg, services)
+		return e.envMatch(cfg, services)
 	default:
 		return nil, fmt.Errorf("unknown selector type: %s", cfg.Type)
 	}
 }
 
-func gitDiff(cfg models.SelectorConfig, ctx models.PipelineContext, services []models.Service) ([]models.Job, error) {
+func (e *Evaluator) gitDiff(cfg models.SelectorConfig, ctx models.PipelineContext, services []models.Service) ([]models.Job, error) {
 	beforeSha := renderTemplate(cfg.BeforeSHA, ctx)
 	currentSha := renderTemplate(cfg.CurrentSHA, ctx)
 
@@ -49,7 +68,7 @@ func gitDiff(cfg models.SelectorConfig, ctx models.PipelineContext, services []m
 		return nil, fmt.Errorf("repo_root is empty (context repo_root is missing and not configured)")
 	}
 
-	changedFiles, err := git.GetChangedFiles(repoRoot, beforeSha, currentSha)
+	changedFiles, err := e.gitCli.GetChangedFiles(repoRoot, beforeSha, currentSha)
 	if err != nil {
 		return nil, fmt.Errorf("get git diff: %w", err)
 	}
@@ -82,7 +101,7 @@ func gitDiff(cfg models.SelectorConfig, ctx models.PipelineContext, services []m
 	return jobs, nil
 }
 
-func regexTag(cfg models.SelectorConfig, ctx models.PipelineContext, services []models.Service) ([]models.Job, error) {
+func (e *Evaluator) regexTag(cfg models.SelectorConfig, ctx models.PipelineContext, services []models.Service) ([]models.Job, error) {
 	if cfg.Pattern == "" {
 		return nil, fmt.Errorf("regex-tag selector requires a 'pattern' string")
 	}
@@ -117,7 +136,7 @@ func regexTag(cfg models.SelectorConfig, ctx models.PipelineContext, services []
 	return jobs, nil
 }
 
-func envMatch(cfg models.SelectorConfig, services []models.Service) ([]models.Job, error) {
+func (e *Evaluator) envMatch(cfg models.SelectorConfig, services []models.Service) ([]models.Job, error) {
 	if cfg.Prefix == "" {
 		return nil, fmt.Errorf("env-match selector requires a prefix string")
 	}

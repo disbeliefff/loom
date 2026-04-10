@@ -34,7 +34,7 @@ func TestApply_EnvMatch(t *testing.T) {
 
 	ctx := models.PipelineContext{}
 
-	jobs, err := selector.Apply(cfg, ctx, services)
+	jobs, err := selector.NewEvaluator(nil, nil).Apply(cfg, ctx, services)
 	require.NoError(t, err)
 
 	require.Len(t, jobs, 1)
@@ -54,20 +54,20 @@ func TestApply_RegexTag(t *testing.T) {
 
 	// 1. Matching Tag
 	ctxMatch := models.PipelineContext{CommitTag: "AccountingAPI/v1.0.0"}
-	jobs, err := selector.Apply(cfg, ctxMatch, services)
+	jobs, err := selector.NewEvaluator(nil, nil).Apply(cfg, ctxMatch, services)
 	require.NoError(t, err)
 	require.Len(t, jobs, 1)
 	assert.Equal(t, "AccountingAPI", jobs[0].Service.Key)
 
 	// 2. Non-matching Tag
 	ctxNoMatch := models.PipelineContext{CommitTag: "RandomTag/v2.0"}
-	jobs, err = selector.Apply(cfg, ctxNoMatch, services)
+	jobs, err = selector.NewEvaluator(nil, nil).Apply(cfg, ctxNoMatch, services)
 	require.NoError(t, err)
 	require.Len(t, jobs, 0)
 
 	// 3. Empty Tag
 	ctxEmpty := models.PipelineContext{CommitTag: ""}
-	jobs, err = selector.Apply(cfg, ctxEmpty, services)
+	jobs, err = selector.NewEvaluator(nil, nil).Apply(cfg, ctxEmpty, services)
 	require.NoError(t, err)
 	require.Len(t, jobs, 0)
 
@@ -76,7 +76,7 @@ func TestApply_RegexTag(t *testing.T) {
 		Type:    "regex-tag",
 		Pattern: `^{{ .Service.InvalidKey }}/v.*$`, // Accessing undefined field
 	}
-	_, err = selector.Apply(cfgInvalid, ctxMatch, services)
+	_, err = selector.NewEvaluator(nil, nil).Apply(cfgInvalid, ctxMatch, services)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "render pattern template")
 }
@@ -154,7 +154,7 @@ func TestApply_GitDiff(t *testing.T) {
 	}
 
 	// In commit 1, we added "src/billing/main.go", so billing-service should be selected.
-	jobs, err := selector.Apply(cfg, ctx, services)
+	jobs, err := selector.NewEvaluator(nil, nil).Apply(cfg, ctx, services)
 	require.NoError(t, err)
 
 	require.Len(t, jobs, 1)
@@ -188,7 +188,7 @@ func TestApply_GitDiff_ContextRepoRoot(t *testing.T) {
 		RepoRoot:  repoPath,
 	}
 
-	jobs, err := selector.Apply(cfg, ctx, services)
+	jobs, err := selector.NewEvaluator(nil, nil).Apply(cfg, ctx, services)
 	require.NoError(t, err)
 
 	require.Len(t, jobs, 1)
@@ -197,14 +197,14 @@ func TestApply_GitDiff_ContextRepoRoot(t *testing.T) {
 
 func TestApply_UnknownType(t *testing.T) {
 	cfg := models.SelectorConfig{Type: "unknown"}
-	_, err := selector.Apply(cfg, models.PipelineContext{}, []models.Service{})
+	_, err := selector.NewEvaluator(nil, nil).Apply(cfg, models.PipelineContext{}, []models.Service{})
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "unknown selector type: unknown")
 }
 
 func TestApply_MissingType(t *testing.T) {
 	cfg := models.SelectorConfig{Type: ""}
-	_, err := selector.Apply(cfg, models.PipelineContext{}, []models.Service{})
+	_, err := selector.NewEvaluator(nil, nil).Apply(cfg, models.PipelineContext{}, []models.Service{})
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "selector type is missing")
 }
