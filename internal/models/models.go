@@ -12,26 +12,26 @@ type Service struct {
 
 // Strategy represents a single generation strategy from pipeline-strategies.yaml
 type Strategy struct {
-	Name      string         `yaml:"name"`
-	Condition string         `yaml:"condition"`
-	Selector  SelectorConfig `yaml:"selector"`
-	Template  string         `yaml:"template"`
+	Name      string         `yaml:"name" json:"name"`
+	Condition string         `yaml:"condition" json:"condition"`
+	Selector  SelectorConfig `yaml:"selector" json:"selector"`
+	Template  string         `yaml:"template" json:"template"`
 }
 
 // SelectorConfig holds configuration fields for any type of selector.
 type SelectorConfig struct {
-	Type       string `yaml:"type"`
-	BeforeSHA  string `yaml:"before_sha"`
-	CurrentSHA string `yaml:"current_sha"`
-	RepoRoot   string `yaml:"repo_root"`
-	WatchField string `yaml:"watch_field"`
-	Pattern    string `yaml:"pattern"`
-	Prefix     string `yaml:"prefix"`
+	Type       string `yaml:"type" json:"type"`
+	BeforeSHA  string `yaml:"before_sha" json:"before_sha"`
+	CurrentSHA string `yaml:"current_sha" json:"current_sha"`
+	RepoRoot   string `yaml:"repo_root" json:"repo_root"`
+	WatchField string `yaml:"watch_field" json:"watch_field"`
+	Pattern    string `yaml:"pattern" json:"pattern"`
+	Prefix     string `yaml:"prefix" json:"prefix"`
 }
 
 // Config represents the pipeline-strategies.yaml structure
 type Config struct {
-	Strategies []Strategy `yaml:"strategies"`
+	Strategies []Strategy `yaml:"strategies" json:"strategies"`
 }
 
 // PipelineContext represents context variables (like CI variables) to be passed to templates

@@ -6,9 +6,10 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 
 	"github.com/disbeliefff/loom/internal/models"
-	"gopkg.in/yaml.v3"
+	"sigs.k8s.io/yaml"
 )
 
 var safeKeyRegex = regexp.MustCompile(`[^a-zA-Z0-9_-]`)
@@ -37,20 +38,38 @@ func Load(path string) (*models.Config, error) {
 	return &cfg, nil
 }
 
-// LoadServices parses the JSON file containing the list of services.
+// LoadServices parses the JSON or YAML file containing the list of services.
 func LoadServices(path string) ([]models.Service, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("read services file %q: %w", path, err)
 	}
 
-	var rawServices []map[string]string
-	if err := json.Unmarshal(data, &rawServices); err != nil {
-		return nil, fmt.Errorf("parse services file %q: %w", path, err)
+	var rawServices []map[string]any
+	ext := strings.ToLower(filepath.Ext(path))
+
+	if ext == ".yaml" || ext == ".yml" {
+		if err := yaml.Unmarshal(data, &rawServices); err != nil {
+			return nil, fmt.Errorf("parse yaml services file %q: %w", path, err)
+		}
+	} else {
+		if err := json.Unmarshal(data, &rawServices); err != nil {
+			return nil, fmt.Errorf("parse json services file %q: %w", path, err)
+		}
 	}
 
 	services := make([]models.Service, 0, len(rawServices))
-	for _, raw := range rawServices {
+	for _, rawAny := range rawServices {
+		// Convert map[string]any to map[string]string for compatibility
+		raw := make(map[string]string)
+		for k, v := range rawAny {
+			if strVal, ok := v.(string); ok {
+				raw[k] = strVal
+			} else if v != nil {
+				raw[k] = fmt.Sprintf("%v", v)
+			}
+		}
+
 		keyVal, ok := raw["key"]
 		if !ok || keyVal == "" {
 			continue // Skip elements without a valid "key" field

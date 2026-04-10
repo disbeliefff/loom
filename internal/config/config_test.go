@@ -114,6 +114,25 @@ func TestLoadServices(t *testing.T) {
 	invalidJSON := []byte(`[ { "key": "Missing quotes } ]`)
 	require.NoError(t, os.WriteFile(invalidServicesPath, invalidJSON, 0644))
 
+	validYAMLPath := filepath.Join(tempDir, "valid-services.yaml")
+	invalidYAMLPath := filepath.Join(tempDir, "invalid-services.yml")
+
+	validYAML := []byte(`
+- key: "AuthService"
+  watch_dir: "src/auth/"
+  custom_field: "test_value"
+- watch_dir: "src/missing_key/"
+- key: "Bad!@#Key"
+  watch_dir: "src/bad_key/"
+`)
+	require.NoError(t, os.WriteFile(validYAMLPath, validYAML, 0644))
+
+	invalidYAML := []byte(`
+- key: "Missing quote
+  watch_dir: "src/"
+`)
+	require.NoError(t, os.WriteFile(invalidYAMLPath, invalidYAML, 0644))
+
 	t.Run("Valid Services", func(t *testing.T) {
 		services, err := config.LoadServices(validServicesPath)
 		require.NoError(t, err)
@@ -133,12 +152,33 @@ func TestLoadServices(t *testing.T) {
 	t.Run("Invalid Services JSON Returns Error", func(t *testing.T) {
 		_, err := config.LoadServices(invalidServicesPath)
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), "parse services file")
+		assert.Contains(t, err.Error(), "parse json services file")
 	})
 
 	t.Run("Missing Services JSON Returns Error", func(t *testing.T) {
 		_, err := config.LoadServices(missingServicesPath)
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "read services file")
+	})
+
+	t.Run("Valid Services YAML", func(t *testing.T) {
+		services, err := config.LoadServices(validYAMLPath)
+		require.NoError(t, err)
+
+		require.Len(t, services, 2)
+
+		assert.Equal(t, "AuthService", services[0].Key)
+		assert.Equal(t, "AuthService", services[0].SafeKey)
+		assert.Equal(t, "test_value", services[0].Raw["custom_field"])
+
+		assert.Equal(t, "Bad!@#Key", services[1].Key)
+		assert.Equal(t, "BadKey", services[1].SafeKey)
+		assert.Equal(t, "src/bad_key/", services[1].Raw["watch_dir"])
+	})
+
+	t.Run("Invalid Services YAML Returns Error", func(t *testing.T) {
+		_, err := config.LoadServices(invalidYAMLPath)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "parse yaml services file")
 	})
 }
