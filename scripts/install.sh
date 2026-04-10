@@ -72,7 +72,15 @@ download_and_install() {
 
     local tmp_dir
     tmp_dir=$(mktemp -d)
-    trap "rm -rf \"$tmp_dir\"" EXIT
+    
+    # Define a cleanup function that doesn't rely on local variables directly
+    cleanup() {
+        if [[ -d "${1:-}" ]]; then
+            rm -rf "$1"
+        fi
+    }
+    # Pass the value of tmp_dir to the cleanup function
+    trap "cleanup \"$tmp_dir\"" EXIT
 
     # Check if the URL returns a 200 OK before piping to tar
     local http_code
