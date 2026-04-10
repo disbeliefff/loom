@@ -17,7 +17,7 @@ import (
 // It switches behavior based on the configured "Type" (e.g., git-diff, regex-tag, env-match).
 func Apply(cfg models.SelectorConfig, ctx models.PipelineContext, services []models.Service) ([]models.Job, error) {
 	if cfg.Type == "" {
-		return nil, fmt.Errorf("selector 'type' is missing")
+		return nil, fmt.Errorf("selector type is missing")
 	}
 
 	switch cfg.Type {
@@ -51,10 +51,10 @@ func gitDiff(cfg models.SelectorConfig, ctx models.PipelineContext, services []m
 
 	changedFiles, err := git.GetChangedFiles(repoRoot, beforeSha, currentSha)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get git diff: %w", err)
+		return nil, fmt.Errorf("get git diff: %w", err)
 	}
 
-	var jobs []models.Job
+	jobs := make([]models.Job, 0, len(services))
 	for _, svc := range services {
 		watchDir, ok := svc.Raw[watchField]
 		if !ok || watchDir == "" {
@@ -93,20 +93,20 @@ func regexTag(cfg models.SelectorConfig, ctx models.PipelineContext, services []
 
 	tmpl, err := template.New("pattern").Funcs(sprig.TxtFuncMap()).Parse(cfg.Pattern)
 	if err != nil {
-		return nil, fmt.Errorf("invalid pattern template '%s': %w", cfg.Pattern, err)
+		return nil, fmt.Errorf("parse pattern template %q: %w", cfg.Pattern, err)
 	}
 
-	var jobs []models.Job
+	jobs := make([]models.Job, 0, len(services))
 	for _, svc := range services {
 		var buf bytes.Buffer
 		if err := tmpl.Execute(&buf, map[string]any{"Service": svc}); err != nil {
-			return nil, fmt.Errorf("failed to render pattern template: %w", err)
+			return nil, fmt.Errorf("render pattern template: %w", err)
 		}
 
 		renderedPattern := buf.String()
 		re, err := regexp.Compile(renderedPattern)
 		if err != nil {
-			return nil, fmt.Errorf("invalid compiled regex '%s': %w", renderedPattern, err)
+			return nil, fmt.Errorf("compile regex %q: %w", renderedPattern, err)
 		}
 
 		if re.MatchString(ctx.CommitTag) {
@@ -119,10 +119,10 @@ func regexTag(cfg models.SelectorConfig, ctx models.PipelineContext, services []
 
 func envMatch(cfg models.SelectorConfig, services []models.Service) ([]models.Job, error) {
 	if cfg.Prefix == "" {
-		return nil, fmt.Errorf("env-match selector requires a 'prefix' string")
+		return nil, fmt.Errorf("env-match selector requires a prefix string")
 	}
 
-	var jobs []models.Job
+	jobs := make([]models.Job, 0, len(services))
 	for _, svc := range services {
 		envKey := cfg.Prefix + strings.ToUpper(strings.ReplaceAll(svc.Key, "-", "_"))
 

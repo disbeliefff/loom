@@ -63,7 +63,7 @@ func NewRootCommand() *cobra.Command {
 // Execute adds all child commands to the root command and sets flags appropriately.
 func Execute() {
 	if err := execute(os.Args[1:], os.Stdout, os.Stderr); err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		slog.Error("execution failed", "error", err)
 		os.Exit(1)
 	}
 }
@@ -84,16 +84,16 @@ func runGenerate(_ *cobra.Command, _ []string) error {
 
 	cfg, err := config.Load(configPath)
 	if err != nil {
-		return err
+		return fmt.Errorf("load config: %w", err)
 	}
 
 	services, err := config.LoadServices(servicesPath)
 	if err != nil {
-		return err
+		return fmt.Errorf("load services: %w", err)
 	}
 	ctx, err := getPipelineContext()
 	if err != nil {
-		return err
+		return fmt.Errorf("get pipeline context: %w", err)
 	}
 
 	slog.Debug("Pipeline Context initialized", "context", fmt.Sprintf("%+v", ctx))
@@ -111,14 +111,14 @@ func runGenerate(_ *cobra.Command, _ []string) error {
 
 			jobs, err := selector.Apply(strategy.Selector, ctx, services)
 			if err != nil {
-				return fmt.Errorf("selector failed for strategy '%s': %w", strategy.Name, err)
+				return fmt.Errorf("apply selector for strategy %q: %w", strategy.Name, err)
 			}
 
 			slog.Info("Selected jobs", "count", len(jobs))
 
 			err = template.RenderPipeline(strategy.Template, jobs, ctx, outputPath)
 			if err != nil {
-				return fmt.Errorf("failed to render pipeline: %w", err)
+				return fmt.Errorf("render pipeline: %w", err)
 			}
 			return nil
 		}
@@ -140,16 +140,16 @@ func runValidate(_ *cobra.Command, _ []string) error {
 
 	cfg, err := config.Load(configPath)
 	if err != nil {
-		return err
+		return fmt.Errorf("load config: %w", err)
 	}
 
 	services, err := config.LoadServices(servicesPath)
 	if err != nil {
-		return err
+		return fmt.Errorf("load services: %w", err)
 	}
 	ctx, err := getPipelineContext()
 	if err != nil {
-		return err
+		return fmt.Errorf("get pipeline context: %w", err)
 	}
 
 	for _, strategy := range cfg.Strategies {
@@ -189,7 +189,7 @@ func getPipelineContext() (models.PipelineContext, error) {
 	if resolvedRepoRoot == "" {
 		pwd, err := os.Getwd()
 		if err != nil {
-			return models.PipelineContext{}, fmt.Errorf("failed to get current working directory: %w", err)
+			return models.PipelineContext{}, fmt.Errorf("get current working directory: %w", err)
 		}
 		resolvedRepoRoot = pwd
 	}

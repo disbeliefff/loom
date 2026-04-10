@@ -120,7 +120,7 @@ func TestGetChangedFiles(t *testing.T) {
 	t.Run("Non-existent repo path", func(t *testing.T) {
 		_, err := git.GetChangedFiles("/path/does/not/exist", "", "")
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), "failed to open git repository")
+		assert.Contains(t, err.Error(), "open git repository")
 	})
 
 	t.Run("Non-existent explicit before_sha fails cleanly but falls back", func(t *testing.T) {

@@ -9,36 +9,38 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/object"
 )
 
+const emptyGitHash = "0000000000000000000000000000000000000000"
+
 // GetChangedFiles returns a list of files changed between beforeSha and currentSha.
 // If beforeSha is empty or "0000000000000000000000000000000000000000",
 // it falls back to comparing HEAD with its parent (HEAD~1).
 func GetChangedFiles(repoPath, beforeSha, currentSha string) ([]string, error) {
 	repo, err := git.PlainOpen(repoPath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to open git repository at %s: %w", repoPath, err)
+		return nil, fmt.Errorf("open git repository %q: %w", repoPath, err)
 	}
 
 	var currentObj *object.Commit
 	if currentSha == "" {
 		headRef, errHead := repo.Head()
 		if errHead != nil {
-			return nil, fmt.Errorf("failed to get HEAD: %w", errHead)
+			return nil, fmt.Errorf("get HEAD: %w", errHead)
 		}
 		currentObj, err = repo.CommitObject(headRef.Hash())
 		if err != nil {
-			return nil, fmt.Errorf("failed to get commit object for HEAD: %w", err)
+			return nil, fmt.Errorf("get commit object for HEAD: %w", err)
 		}
 	} else {
 		hash := plumbing.NewHash(currentSha)
 		currentObj, err = repo.CommitObject(hash)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get commit object for %s: %w", currentSha, err)
+			return nil, fmt.Errorf("get commit object for %s: %w", currentSha, err)
 		}
 	}
 
 	var beforeObj *object.Commit
 
-	isInvalidBeforeSha := beforeSha == "" || beforeSha == "0000000000000000000000000000000000000000"
+	isInvalidBeforeSha := beforeSha == "" || beforeSha == emptyGitHash
 	if isInvalidBeforeSha {
 		slog.Info("Invalid or empty before_sha provided, falling back to HEAD~1", "before_sha", beforeSha)
 
@@ -50,7 +52,7 @@ func GetChangedFiles(repoPath, beforeSha, currentSha string) ([]string, error) {
 		parentHash := currentObj.ParentHashes[0]
 		beforeObj, err = repo.CommitObject(parentHash)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get parent commit object: %w", err)
+			return nil, fmt.Errorf("get parent commit object: %w", err)
 		}
 	} else {
 		hash := plumbing.NewHash(beforeSha)
@@ -62,7 +64,7 @@ func GetChangedFiles(repoPath, beforeSha, currentSha string) ([]string, error) {
 				parentHash := currentObj.ParentHashes[0]
 				beforeObj, err = repo.CommitObject(parentHash)
 				if err != nil {
-					return nil, fmt.Errorf("failed to get parent commit object: %w", err)
+					return nil, fmt.Errorf("get parent commit object: %w", err)
 				}
 			} else {
 				return getInitialCommitFiles(currentObj)
@@ -103,7 +105,7 @@ func getDiff(current, before *object.Commit) ([]string, error) {
 		return nil, err
 	}
 
-	var changedFiles []string
+	changedFiles := make([]string, 0, len(changes))
 	for _, change := range changes {
 		if change.To.Name != "" {
 			changedFiles = append(changedFiles, change.To.Name)
