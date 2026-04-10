@@ -8,6 +8,7 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/Masterminds/sprig/v3"
 	"github.com/disbeliefff/loom/internal/git"
 	"github.com/disbeliefff/loom/internal/models"
 )
@@ -40,12 +41,15 @@ func gitDiff(cfg models.SelectorConfig, ctx models.PipelineContext, services []m
 		watchField = "watch_dir" // default
 	}
 
-	pwd, err := os.Getwd()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get current working directory: %w", err)
+	repoRoot := renderTemplate(cfg.RepoRoot, ctx)
+	if repoRoot == "" {
+		repoRoot = ctx.RepoRoot
+	}
+	if repoRoot == "" {
+		return nil, fmt.Errorf("repo_root is empty (context repo_root is missing and not configured)")
 	}
 
-	changedFiles, err := git.GetChangedFiles(pwd, beforeSha, currentSha)
+	changedFiles, err := git.GetChangedFiles(repoRoot, beforeSha, currentSha)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get git diff: %w", err)
 	}
@@ -87,7 +91,7 @@ func regexTag(cfg models.SelectorConfig, ctx models.PipelineContext, services []
 		return nil, nil // No tag, no matches
 	}
 
-	tmpl, err := template.New("pattern").Parse(cfg.Pattern)
+	tmpl, err := template.New("pattern").Funcs(sprig.TxtFuncMap()).Parse(cfg.Pattern)
 	if err != nil {
 		return nil, fmt.Errorf("invalid pattern template '%s': %w", cfg.Pattern, err)
 	}
@@ -137,7 +141,7 @@ func renderTemplate(val string, ctx models.PipelineContext) string {
 		return ""
 	}
 
-	tmpl, err := template.New("val").Parse(val)
+	tmpl, err := template.New("val").Funcs(sprig.TxtFuncMap()).Parse(val)
 	if err == nil {
 		var buf bytes.Buffer
 		err = tmpl.Execute(&buf, map[string]any{"Context": ctx})

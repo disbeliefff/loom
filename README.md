@@ -54,6 +54,7 @@ strategies:
       type: "git-diff"
       before_sha: '{{ .Context.BeforeSHA }}'
       current_sha: '{{ .Context.CommitSHA }}'
+      repo_root: '{{ env "CI_PROJECT_DIR" }}'
       watch_field: "watch_dir"
     template: "templates/build.tmpl"
 
@@ -155,4 +156,5 @@ loom validate --config <path> --services <path>
 ```
 
 **Global Flags**:
+*   `--repo-root` / `-r`: Explicit Git repository root path for `git-diff` (default: fallback to `$CI_PROJECT_DIR` or current working directory).
 *   `--debug` / `-d`: Enables verbose debug logging (useful for troubleshooting `git-diff` edge cases).

@@ -120,11 +120,6 @@ func createTempGitRepoWithFiles(t *testing.T) (string, []string) {
 func TestApply_GitDiff(t *testing.T) {
 	repoPath, commits := createTempGitRepoWithFiles(t)
 
-	// Change working directory to temp git repo for this test
-	originalWd, _ := os.Getwd()
-	os.Chdir(repoPath)
-	defer os.Chdir(originalWd)
-
 	services := []models.Service{
 		{
 			Key: "auth-service",
@@ -145,14 +140,54 @@ func TestApply_GitDiff(t *testing.T) {
 		BeforeSHA:  "{{ .Context.BeforeSHA }}",
 		CurrentSHA: "{{ .Context.CommitSHA }}",
 		WatchField: "watch_dir",
+		RepoRoot:   "{{ env \"CUSTOM_CI_DIR\" }}",
+	}
+
+	// Mock env var
+	os.Setenv("CUSTOM_CI_DIR", repoPath)
+	defer os.Unsetenv("CUSTOM_CI_DIR")
+
+	ctx := models.PipelineContext{
+		BeforeSHA: commits[0],
+		CommitSHA: commits[1],
+		RepoRoot:  "/this/path/should/be/overridden",
+	}
+
+	// In commit 1, we added "src/billing/main.go", so billing-service should be selected.
+	jobs, err := selector.Apply(cfg, ctx, services)
+	require.NoError(t, err)
+
+	require.Len(t, jobs, 1)
+	assert.Equal(t, "billing-service", jobs[0].Service.Key)
+}
+
+func TestApply_GitDiff_ContextRepoRoot(t *testing.T) {
+	repoPath, commits := createTempGitRepoWithFiles(t)
+
+	services := []models.Service{
+		{
+			Key: "auth-service",
+			Raw: map[string]any{"watch_dir": "src/auth"},
+		},
+		{
+			Key: "billing-service",
+			Raw: map[string]any{"watch_dir": "src/billing"},
+		},
+	}
+
+	cfg := models.SelectorConfig{
+		Type:       "git-diff",
+		BeforeSHA:  "{{ .Context.BeforeSHA }}",
+		CurrentSHA: "{{ .Context.CommitSHA }}",
+		WatchField: "watch_dir",
 	}
 
 	ctx := models.PipelineContext{
 		BeforeSHA: commits[0],
 		CommitSHA: commits[1],
+		RepoRoot:  repoPath,
 	}
 
-	// In commit 1, we added "src/billing/main.go", so billing-service should be selected.
 	jobs, err := selector.Apply(cfg, ctx, services)
 	require.NoError(t, err)
 
