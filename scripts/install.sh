@@ -1,6 +1,16 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Global variables for cleanup
+TMP_DIR=""
+
+cleanup() {
+    if [[ -n "${TMP_DIR:-}" ]] && [[ -d "${TMP_DIR:-}" ]]; then
+        rm -rf "$TMP_DIR"
+    fi
+}
+trap cleanup EXIT
+
 REPO="disbeliefff/loom"
 BIN_NAME="loom"
 INSTALL_DIR="/usr/local/bin"
@@ -71,15 +81,6 @@ download_and_install() {
     log_info "Downloading from $download_url..."
 
     TMP_DIR=$(mktemp -d)
-    
-# Global cleanup logic to avoid local variable scope issues with bash traps and set -u
-TMP_DIR=""
-cleanup() {
-    if [[ -n "$TMP_DIR" ]] && [[ -d "$TMP_DIR" ]]; then
-        rm -rf "$TMP_DIR"
-    fi
-}
-trap cleanup EXIT
 
     # Check if the URL returns a 200 OK before piping to tar
     local http_code
