@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Configuration
 REPO="disbeliefff/loom"
 BIN_NAME="loom"
 INSTALL_DIR="/usr/local/bin"
