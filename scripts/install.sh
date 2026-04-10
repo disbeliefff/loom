@@ -1,68 +1,125 @@
 #!/usr/bin/env bash
-set -e
+set -euo pipefail
 
+# Configuration
 REPO="disbeliefff/loom"
 BIN_NAME="loom"
 INSTALL_DIR="/usr/local/bin"
 
-echo "--- Installing $BIN_NAME ---"
+# --- Utility Functions ---
 
-# Detect OS
-OS="$(uname -s)"
-case "$OS" in
-    Linux) OS_NAME="Linux" ;;
-    Darwin) OS_NAME="Darwin" ;;
-    *) echo "Unsupported OS: $OS"; exit 1 ;;
-esac
+setup_colors() {
+    # Check if we're running in a terminal that supports colors
+    if [[ -t 1 ]] && command -v tput >/dev/null 2>&1; then
+        RED=$(tput setaf 1)
+        GREEN=$(tput setaf 2)
+        YELLOW=$(tput setaf 3)
+        BLUE=$(tput setaf 4)
+        BOLD=$(tput bold)
+        RESET=$(tput sgr0)
+    else
+        RED=""
+        GREEN=""
+        YELLOW=""
+        BLUE=""
+        BOLD=""
+        RESET=""
+    fi
+}
 
-# Detect Architecture
-ARCH="$(uname -m)"
-case "$ARCH" in
-    x86_64) ARCH_NAME="x86_64" ;;
-    arm64|aarch64) ARCH_NAME="arm64" ;;
-    *) echo "Unsupported architecture: $ARCH"; exit 1 ;;
-esac
+log_info() { echo -e "${BLUE}${BOLD}==>${RESET} ${BOLD}$1${RESET}"; }
+log_success() { echo -e "${GREEN}${BOLD}==> ✅ $1${RESET}"; }
+log_warn() { echo -e "${YELLOW}${BOLD}==> ⚠️ Warning: $1${RESET}"; }
+log_error() { echo -e "${RED}${BOLD}==> ❌ Error: $1${RESET}" >&2; exit 1; }
 
-# Check for curl
-if ! command -v curl &> /dev/null; then
-    echo "Error: curl is required to download the binary."
-    exit 1
-fi
+# --- Core Logic ---
 
-# Get latest version
-echo "Fetching latest version..."
-VERSION=$(curl -sL "https://api.github.com/repos/$REPO/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
-if [ -z "$VERSION" ]; then
-    echo "Failed to fetch the latest version. Are you rate-limited?"
-    exit 1
-fi
+check_dependencies() {
+    local deps=("curl" "tar" "grep" "sed")
+    for dep in "${deps[@]}"; do
+        if ! command -v "$dep" >/dev/null 2>&1; then
+            log_error "Required dependency '$dep' is not installed. Please install it and try again."
+        fi
+    done
+}
 
-echo "Latest version is $VERSION"
+detect_system() {
+    local os
+    os="$(uname -s)"
+    case "$os" in
+        Linux) OS_NAME="Linux" ;;
+        Darwin) OS_NAME="Darwin" ;;
+        *) log_error "Unsupported OS: $os" ;;
+    esac
 
-# Construct download URL based on goreleaser template
-DOWNLOAD_URL="https://github.com/disbeliefff/loom/releases/download/${VERSION}/${BIN_NAME}_${OS_NAME}_${ARCH_NAME}.tar.gz"
+    local arch
+    arch="$(uname -m)"
+    case "$arch" in
+        x86_64|amd64) ARCH_NAME="x86_64" ;;
+        aarch64|arm64) ARCH_NAME="arm64" ;;
+        *) log_error "Unsupported architecture: $arch" ;;
+    esac
+}
 
-echo "Downloading from $DOWNLOAD_URL..."
+get_latest_version() {
+    log_info "Fetching latest release version for $REPO..."
+    VERSION=$(curl -sL "https://api.github.com/repos/$REPO/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+    
+    if [[ -z "$VERSION" ]]; then
+        log_error "Failed to fetch the latest version. GitHub API rate limit might be exceeded."
+    fi
+    log_info "Found latest version: ${GREEN}${VERSION}${RESET}"
+}
 
-# Create temporary directory
-TMP_DIR=$(mktemp -d)
-trap 'rm -rf "$TMP_DIR"' EXIT
+download_and_install() {
+    local download_url="https://github.com/$REPO/releases/download/${VERSION}/${BIN_NAME}_${OS_NAME}_${ARCH_NAME}.tar.gz"
+    log_info "Downloading from $download_url..."
 
-# Download and extract the binary
-if ! curl -sL "$DOWNLOAD_URL" | tar -xz -C "$TMP_DIR" "$BIN_NAME"; then
-    echo "Failed to download or extract the binary. Please check if the release exists."
-    exit 1
-fi
+    # Use a secure temporary directory
+    local tmp_dir
+    tmp_dir=$(mktemp -d)
+    # Ensure cleanup on exit
+    trap 'rm -rf "$tmp_dir"' EXIT
 
-# Install the binary
-echo "Installing to $INSTALL_DIR (might require sudo)..."
-if [ -w "$INSTALL_DIR" ]; then
-    mv "$TMP_DIR/$BIN_NAME" "$INSTALL_DIR/$BIN_NAME"
-else
-    sudo mv "$TMP_DIR/$BIN_NAME" "$INSTALL_DIR/$BIN_NAME"
-fi
+    # Download and extract just the binary
+    if ! curl -sL --fail "$download_url" | tar -xz -C "$tmp_dir" "$BIN_NAME"; then
+        log_error "Failed to download or extract the binary. Please check if the release asset exists."
+    fi
 
-chmod +x "$INSTALL_DIR/$BIN_NAME"
+    log_info "Installing to $INSTALL_DIR..."
+    
+    local install_cmd="mv \"$tmp_dir/$BIN_NAME\" \"$INSTALL_DIR/$BIN_NAME\""
+    
+    # Prompt for sudo if we don't have write access to the installation directory
+    if [[ ! -w "$INSTALL_DIR" ]]; then
+        log_info "Elevated permissions required to write to $INSTALL_DIR. Prompting for sudo..."
+        install_cmd="sudo $install_cmd"
+    fi
 
-echo "✅ Successfully installed $BIN_NAME to $INSTALL_DIR/$BIN_NAME"
-echo "You can now use '$BIN_NAME' from your terminal."
+    if ! eval "$install_cmd"; then
+        log_error "Failed to move the binary to $INSTALL_DIR"
+    fi
+
+    # Make the binary executable
+    local chmod_cmd="chmod +x \"$INSTALL_DIR/$BIN_NAME\""
+    if [[ ! -w "$INSTALL_DIR/$BIN_NAME" ]]; then
+        chmod_cmd="sudo $chmod_cmd"
+    fi
+    eval "$chmod_cmd"
+}
+
+main() {
+    setup_colors
+    log_info "Starting installation of $BIN_NAME..."
+    
+    check_dependencies
+    detect_system
+    get_latest_version
+    download_and_install
+    
+    log_success "Successfully installed $BIN_NAME to $INSTALL_DIR/$BIN_NAME"
+    log_success "Run '${BOLD}$BIN_NAME --help${RESET}' to get started!"
+}
+
+# Run the main function with all script arguments
+main "$@"
