@@ -142,7 +142,7 @@ func (a *App) runGenerate(_ *cobra.Command, _ []string) error {
 	a.logger.Warn("No strategies matched the current environment")
 	if a.outputPath != "" {
 		fallback := "stages:\n  - no-op\nno-op:\n  stage: no-op\n  script:\n    - echo 'No strategies matched'"
-		return os.WriteFile(a.outputPath, []byte(fallback), 0644)
+		return os.WriteFile(a.outputPath, []byte(fallback), 0600)
 	}
 	fmt.Println("No strategies matched")
 	return nil
