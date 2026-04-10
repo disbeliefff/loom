@@ -56,7 +56,7 @@ func gitDiff(cfg models.SelectorConfig, ctx models.PipelineContext, services []m
 
 	var jobs []models.Job
 	for _, svc := range services {
-		watchDir, ok := svc.Raw[watchField].(string)
+		watchDir, ok := svc.Raw[watchField]
 		if !ok || watchDir == "" {
 			continue
 		}

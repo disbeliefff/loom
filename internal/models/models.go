@@ -7,7 +7,7 @@ type Service struct {
 	// SafeKey is a sanitized version of Key for use in YAML anchors or CI job names.
 	SafeKey string
 	// Raw contains all fields from the JSON object to be accessible in templates.
-	Raw map[string]any
+	Raw map[string]string
 }
 
 // Strategy represents a single generation strategy from pipeline-strategies.yaml

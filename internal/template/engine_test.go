@@ -42,7 +42,7 @@ jobs:
 			Service: models.Service{
 				Key:     "auth-service",
 				SafeKey: "authservice",
-				Raw: map[string]any{
+				Raw: map[string]string{
 					"image": "docker.io/auth:latest",
 				},
 			},

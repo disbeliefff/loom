@@ -23,7 +23,7 @@ func TestExecuteReturnsConfigLoadErrors(t *testing.T) {
 		})
 
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), "failed to read config file")
+		assert.Contains(t, err.Error(), "read config file")
 		assert.Empty(t, stdout.String())
 		assert.Empty(t, stderr.String())
 	})
@@ -42,7 +42,7 @@ func TestExecuteReturnsConfigLoadErrors(t *testing.T) {
 		})
 
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), "failed to read services file")
+		assert.Contains(t, err.Error(), "read services file")
 		assert.Empty(t, stdout.String())
 		assert.Empty(t, stderr.String())
 	})

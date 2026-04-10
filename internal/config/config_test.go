@@ -76,13 +76,13 @@ strategies:
 	t.Run("Invalid Config Returns Error", func(t *testing.T) {
 		_, err := config.Load(invalidConfigPath)
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), "failed to parse config file")
+		assert.Contains(t, err.Error(), "parse config file")
 	})
 
 	t.Run("Missing Config Returns Error", func(t *testing.T) {
 		_, err := config.Load(missingConfigPath)
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), "failed to read config file")
+		assert.Contains(t, err.Error(), "read config file")
 	})
 }
 
@@ -133,12 +133,12 @@ func TestLoadServices(t *testing.T) {
 	t.Run("Invalid Services JSON Returns Error", func(t *testing.T) {
 		_, err := config.LoadServices(invalidServicesPath)
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), "failed to parse services file")
+		assert.Contains(t, err.Error(), "parse services file")
 	})
 
 	t.Run("Missing Services JSON Returns Error", func(t *testing.T) {
 		_, err := config.LoadServices(missingServicesPath)
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), "failed to read services file")
+		assert.Contains(t, err.Error(), "read services file")
 	})
 }

@@ -18,12 +18,12 @@ var safeKeyRegex = regexp.MustCompile(`[^a-zA-Z0-9_-]`)
 func Load(path string) (*models.Config, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read config file %s: %w", path, err)
+		return nil, fmt.Errorf("read config file %q: %w", path, err)
 	}
 
 	var cfg models.Config
 	if err := yaml.Unmarshal(data, &cfg); err != nil {
-		return nil, fmt.Errorf("failed to parse config file %s: %w", path, err)
+		return nil, fmt.Errorf("parse config file %q: %w", path, err)
 	}
 
 	baseDir := filepath.Dir(path)
@@ -41,47 +41,27 @@ func Load(path string) (*models.Config, error) {
 func LoadServices(path string) ([]models.Service, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read services file %s: %w", path, err)
+		return nil, fmt.Errorf("read services file %q: %w", path, err)
 	}
 
-	var rawServices []map[string]any
+	var rawServices []map[string]string
 	if err := json.Unmarshal(data, &rawServices); err != nil {
-		return nil, fmt.Errorf("failed to parse services file %s: %w", path, err)
+		return nil, fmt.Errorf("parse services file %q: %w", path, err)
 	}
 
-	var services []models.Service
+	services := make([]models.Service, 0, len(rawServices))
 	for _, raw := range rawServices {
-		keyVal, ok := raw["key"].(string)
+		keyVal, ok := raw["key"]
 		if !ok || keyVal == "" {
 			continue // Skip elements without a valid "key" field
 		}
 
-		safeKey := safeKeyRegex.ReplaceAllString(keyVal, "")
-
 		services = append(services, models.Service{
 			Key:     keyVal,
-			SafeKey: safeKey,
+			SafeKey: safeKeyRegex.ReplaceAllString(keyVal, ""),
 			Raw:     raw,
 		})
 	}
 
 	return services, nil
-}
-
-// MustLoad parses the YAML pipeline strategies configuration or panics on error.
-func MustLoad(path string) *models.Config {
-	cfg, err := Load(path)
-	if err != nil {
-		panic(err)
-	}
-	return cfg
-}
-
-// MustLoadServices parses the JSON file containing the list of services or panics on error.
-func MustLoadServices(path string) []models.Service {
-	services, err := LoadServices(path)
-	if err != nil {
-		panic(err)
-	}
-	return services
 }
