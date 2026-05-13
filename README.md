@@ -54,6 +54,18 @@ This registry maps your monorepo source directories (`watch_dir`) to your Docker
 ]
 ```
 
+> **Tip:** `watch_dir` supports comma-separated values so a single service can span multiple directories:
+> ```json
+> {
+>   "key": "Auth",
+>   "watch_dir": "AuthJwt, AuthCore",
+>   "image": "auth-api",
+>   "dockerfile": "Auth/Dockerfile",
+>   "kustomize": "apps/auth/overlays/prod"
+> }
+> ```
+> A build is triggered when **any** of the listed directories contains changed files.
+
 ### 2. Define your Strategies (`pipeline-strategies.yaml`)
 Define the rules for when to trigger different pipeline templates. Loom uses a powerful expression engine (`expr`) to evaluate GitLab CI variables.
 
