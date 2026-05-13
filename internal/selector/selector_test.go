@@ -81,7 +81,7 @@ func TestApply_RegexTag(t *testing.T) {
 	assert.Contains(t, err.Error(), "render pattern template")
 }
 
-func createTempGitRepoWithFiles(t *testing.T) (string, []string) {
+func createTempGitRepo(t *testing.T) (string, *gogit.Repository, func(filename, msg string) string) {
 	tempDir := t.TempDir()
 
 	repo, err := gogit.PlainInit(tempDir, false)
@@ -89,8 +89,6 @@ func createTempGitRepoWithFiles(t *testing.T) (string, []string) {
 
 	wt, err := repo.Worktree()
 	require.NoError(t, err)
-
-	commitHashes := []string{}
 
 	commitFile := func(filename, msg string) string {
 		require.NoError(t, os.MkdirAll(filepath.Dir(filepath.Join(tempDir, filename)), 0755))
@@ -111,6 +109,13 @@ func createTempGitRepoWithFiles(t *testing.T) (string, []string) {
 		return commit.String()
 	}
 
+	return tempDir, repo, commitFile
+}
+
+func createTempGitRepoWithFiles(t *testing.T) (string, []string) {
+	tempDir, _, commitFile := createTempGitRepo(t)
+
+	commitHashes := []string{}
 	commitHashes = append(commitHashes, commitFile("src/auth/main.go", "Init auth"))
 	commitHashes = append(commitHashes, commitFile("src/billing/main.go", "Init billing"))
 
@@ -207,4 +212,72 @@ func TestApply_MissingType(t *testing.T) {
 	_, err := selector.NewEvaluator(nil, nil).Apply(cfg, models.PipelineContext{}, []models.Service{})
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "selector type is missing")
+}
+
+func TestApply_GitDiff_MultiWatchDir(t *testing.T) {
+	tempDir, _, commitFile := createTempGitRepo(t)
+
+	commits := []string{}
+	commits = append(commits, commitFile("AuthJwt/main.go", "Init AuthJwt"))
+	commits = append(commits, commitFile("AuthCore/handler.go", "Init AuthCore"))
+	commits = append(commits, commitFile("Billing/main.go", "Init Billing"))
+
+	services := []models.Service{
+		{
+			Key: "auth-service",
+			Raw: map[string]string{"watch_dir": "AuthJwt, AuthCore"},
+		},
+		{
+			Key: "billing-service",
+			Raw: map[string]string{"watch_dir": "Billing"},
+		},
+	}
+
+	cfg := models.SelectorConfig{
+		Type:       "git-diff",
+		BeforeSHA:  "{{ .Context.BeforeSHA }}",
+		CurrentSHA: "{{ .Context.CommitSHA }}",
+		WatchField: "watch_dir",
+	}
+
+	t.Run("match first dir in comma list", func(t *testing.T) {
+		ctx := models.PipelineContext{
+			BeforeSHA: commits[0],
+			CommitSHA: commits[1],
+			RepoRoot:  tempDir,
+		}
+		jobs, err := selector.NewEvaluator(nil, nil).Apply(cfg, ctx, services)
+		require.NoError(t, err)
+		require.Len(t, jobs, 1)
+		assert.Equal(t, "auth-service", jobs[0].Service.Key)
+	})
+
+	t.Run("match second dir in comma list", func(t *testing.T) {
+		ctx := models.PipelineContext{
+			BeforeSHA: commits[1],
+			CommitSHA: commits[2],
+			RepoRoot:  tempDir,
+		}
+		jobs, err := selector.NewEvaluator(nil, nil).Apply(cfg, ctx, services)
+		require.NoError(t, err)
+		require.Len(t, jobs, 1)
+		assert.Equal(t, "billing-service", jobs[0].Service.Key)
+	})
+
+	t.Run("no match when no dir matches", func(t *testing.T) {
+		singleDirServices := []models.Service{
+			{
+				Key: "auth-service",
+				Raw: map[string]string{"watch_dir": "AuthJwt,AuthCore"},
+			},
+		}
+		ctx := models.PipelineContext{
+			BeforeSHA: commits[1],
+			CommitSHA: commits[2],
+			RepoRoot:  tempDir,
+		}
+		jobs, err := selector.NewEvaluator(nil, nil).Apply(cfg, ctx, singleDirServices)
+		require.NoError(t, err)
+		require.Len(t, jobs, 0)
+	})
 }
