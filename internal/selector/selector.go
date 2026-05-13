@@ -80,15 +80,23 @@ func (e *Evaluator) gitDiff(cfg models.SelectorConfig, ctx models.PipelineContex
 			continue
 		}
 
-		watchPrefix := watchDir
-		if !strings.HasSuffix(watchPrefix, "/") {
-			watchPrefix += "/"
-		}
-
 		matched := false
-		for _, f := range changedFiles {
-			if strings.HasPrefix(f, watchPrefix) {
-				matched = true
+		for dir := range strings.SplitSeq(watchDir, ",") {
+			dir = strings.TrimSpace(dir)
+			if dir == "" {
+				continue
+			}
+			prefix := dir
+			if !strings.HasSuffix(prefix, "/") {
+				prefix += "/"
+			}
+			for _, f := range changedFiles {
+				if strings.HasPrefix(f, prefix) {
+					matched = true
+					break
+				}
+			}
+			if matched {
 				break
 			}
 		}
