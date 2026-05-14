@@ -10,7 +10,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func newGitOpsRollbackCommand(a *app) *cobra.Command {
+func newGitOpsRollbackCommand(a *app) (*cobra.Command, error) {
 	var (
 		strategyName string
 		serviceName  string
@@ -33,9 +33,11 @@ func newGitOpsRollbackCommand(a *app) *cobra.Command {
 	cmd.Flags().BoolVar(&dryRun, "dry-run", false, "Show changes without committing")
 	cmd.Flags().BoolVarP(&a.debug, "debug", "d", false, "Enable debug logging")
 
-	_ = cmd.MarkFlagRequired("strategy")
+	if err := cmd.MarkFlagRequired("strategy"); err != nil {
+		return nil, err
+	}
 
-	return cmd
+	return cmd, nil
 }
 
 func (a *app) runGitOpsRollback(strategyName, serviceName string, dryRun bool) error {
@@ -95,7 +97,7 @@ func (a *app) runGitOpsRollback(strategyName, serviceName string, dryRun bool) e
 		return nil
 	}
 
-	if err := promotion.WriteManifest(found); err != nil {
+	if err = promotion.WriteManifest(found); err != nil {
 		return fmt.Errorf("write manifest: %w", err)
 	}
 
@@ -107,7 +109,7 @@ func (a *app) runGitOpsRollback(strategyName, serviceName string, dryRun bool) e
 	gitCli := git.NewClient(a.logger)
 	commitMsg := fmt.Sprintf("rollback(%s): %s → %s", service.Key, result.OldTag, result.NewTag)
 
-	if _, err := gitCli.StageAndCommit(target.CheckoutPath, relPath, commitMsg); err != nil {
+	if _, err = gitCli.StageAndCommit(target.CheckoutPath, relPath, commitMsg); err != nil {
 		return fmt.Errorf("commit: %w", err)
 	}
 

@@ -217,8 +217,10 @@ func WriteManifest(found *FoundManifest) error {
 			return fmt.Errorf("encode YAML: %w", err)
 		}
 	}
-	encoder.Close()
-	return os.WriteFile(found.FilePath, buf.Bytes(), 0644)
+	if err := encoder.Close(); err != nil {
+		return fmt.Errorf("encode YAML: %w", err)
+	}
+	return os.WriteFile(found.FilePath, buf.Bytes(), 0600)
 }
 
 func decodeDocuments(data []byte) ([]*yaml.Node, error) {

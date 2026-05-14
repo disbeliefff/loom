@@ -10,7 +10,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func newGitOpsPromoteCommand(a *app) *cobra.Command {
+func newGitOpsPromoteCommand(a *app) (*cobra.Command, error) {
 	var (
 		strategyName string
 		serviceName  string
@@ -35,10 +35,14 @@ func newGitOpsPromoteCommand(a *app) *cobra.Command {
 	cmd.Flags().BoolVar(&dryRun, "dry-run", false, "Show changes without committing")
 	cmd.Flags().BoolVarP(&a.debug, "debug", "d", false, "Enable debug logging")
 
-	_ = cmd.MarkFlagRequired("strategy")
-	_ = cmd.MarkFlagRequired("tag")
+	if err := cmd.MarkFlagRequired("strategy"); err != nil {
+		return nil, err
+	}
+	if err := cmd.MarkFlagRequired("tag"); err != nil {
+		return nil, err
+	}
 
-	return cmd
+	return cmd, nil
 }
 
 func (a *app) runGitOpsPromote(strategyName, serviceName, tag string, dryRun bool) error {
@@ -98,7 +102,7 @@ func (a *app) runGitOpsPromote(strategyName, serviceName, tag string, dryRun boo
 		return nil
 	}
 
-	if err := promotion.WriteManifest(found); err != nil {
+	if err = promotion.WriteManifest(found); err != nil {
 		return fmt.Errorf("write manifest: %w", err)
 	}
 
@@ -110,7 +114,7 @@ func (a *app) runGitOpsPromote(strategyName, serviceName, tag string, dryRun boo
 	gitCli := git.NewClient(a.logger)
 	commitMsg := fmt.Sprintf("promote(%s): %s → %s", service.Key, result.OldTag, result.NewTag)
 
-	if _, err := gitCli.StageAndCommit(target.CheckoutPath, relPath, commitMsg); err != nil {
+	if _, err = gitCli.StageAndCommit(target.CheckoutPath, relPath, commitMsg); err != nil {
 		return fmt.Errorf("commit: %w", err)
 	}
 

@@ -60,7 +60,7 @@ func (c *Client) StageAndCommit(repoPath, filePath, message string) (plumbing.Ha
 		return plumbing.Hash{}, fmt.Errorf("get worktree: %w", err)
 	}
 
-	if _, err := wt.Add(filePath); err != nil {
+	if _, err = wt.Add(filePath); err != nil {
 		return plumbing.Hash{}, fmt.Errorf("stage %q: %w", filePath, err)
 	}
 
