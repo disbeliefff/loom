@@ -63,6 +63,10 @@ func (a *app) runGitOpsRollback(strategyName, serviceName string, dryRun bool) e
 
 	promotion.ApplyDefaults(strategy.Promotion)
 
+	if err := promotion.Validate(strategy.Promotion); err != nil {
+		return fmt.Errorf("validate promotion config: %w", err)
+	}
+
 	service, err := promotion.ResolveService(services, serviceName)
 	if err != nil {
 		return err

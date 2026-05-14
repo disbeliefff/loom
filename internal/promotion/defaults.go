@@ -2,6 +2,8 @@ package promotion
 
 import (
 	_ "embed"
+	"errors"
+	"fmt"
 	"reflect"
 
 	"github.com/disbeliefff/loom/internal/models"
@@ -12,6 +14,19 @@ import (
 var defaultsYAML []byte
 
 var cachedDefaults *models.Promotion
+
+var (
+	supportedProviders = map[string]bool{
+		"flux": true,
+	}
+	supportedModes = map[string]bool{
+		"direct-commit": true,
+	}
+	supportedRollbackStrategies = map[string]bool{
+		"previous-annotation": true,
+		"none":                true,
+	}
+)
 
 func getDefaults() *models.Promotion {
 	if cachedDefaults != nil {
@@ -41,4 +56,21 @@ func applyDefaults(dst, src reflect.Value) {
 			}
 		}
 	}
+}
+
+func Validate(p *models.Promotion) error {
+	var errs []error
+
+	if !supportedProviders[p.Provider] {
+		errs = append(errs, fmt.Errorf("unsupported promotion provider %q (supported: flux)", p.Provider))
+	}
+	if !supportedModes[p.Mode] {
+		errs = append(errs, fmt.Errorf("unsupported promotion mode %q (supported: direct-commit)", p.Mode))
+	}
+	rs := p.Rollback.Strategy
+	if rs != "" && !supportedRollbackStrategies[rs] {
+		errs = append(errs, fmt.Errorf("unsupported rollback strategy %q (supported: previous-annotation, none)", rs))
+	}
+
+	return errors.Join(errs...)
 }

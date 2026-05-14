@@ -280,3 +280,29 @@ func TestPromote_OptionalNamespace(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotNil(t, found)
 }
+
+func TestPromote_AnnotationsNotMapping(t *testing.T) {
+	manifest := `apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: example-api
+  namespace: apps
+  annotations: not-a-mapping
+spec:
+  values:
+    image:
+      repository: registry.example.com/platform/example-api
+      tag: "v1.2.2"
+`
+	target := testTarget()
+	dir := writeManifestDir(t, manifest)
+	target.ManifestPath = "apps/example-api"
+
+	mutator := promotion.NewManifestMutator(target)
+	found, err := mutator.FindManifest(dir)
+	require.NoError(t, err)
+
+	_, err = mutator.Promote(found, "v1.2.3")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "annotations is not a mapping")
+}

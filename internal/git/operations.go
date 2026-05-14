@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/go-git/go-git/v5/plumbing/transport"
@@ -91,7 +92,15 @@ func (c *Client) Push(repoPath string) error {
 		return fmt.Errorf("resolve auth: %w", err)
 	}
 
-	if err := repo.Push(&git.PushOptions{Auth: auth}); err != nil {
+	refspec, err := c.currentBranchRefSpec(repo)
+	if err != nil {
+		return fmt.Errorf("resolve branch refspec: %w", err)
+	}
+
+	if err := repo.Push(&git.PushOptions{
+		Auth:     auth,
+		RefSpecs: []config.RefSpec{refspec},
+	}); err != nil {
 		if errors.Is(err, git.NoErrAlreadyUpToDate) {
 			return nil
 		}
@@ -117,7 +126,7 @@ func (c *Client) PushWithRetry(repoPath string, maxRetries int) error {
 	for i := range maxRetries {
 		c.logger.Info("push rejected, pulling and retrying", "attempt", i+1)
 
-		if pullErr := c.pull(repoPath); pullErr != nil {
+		if pullErr := c.pullOrReset(repoPath); pullErr != nil {
 			return fmt.Errorf("pull before retry: %w", pullErr)
 		}
 		if lastErr = c.Push(repoPath); lastErr == nil {
@@ -128,19 +137,45 @@ func (c *Client) PushWithRetry(repoPath string, maxRetries int) error {
 	return fmt.Errorf("push failed after %d retries: %w", maxRetries, lastErr)
 }
 
-func (c *Client) pull(repoPath string) error {
+func (c *Client) pullOrReset(repoPath string) error {
 	ctx, err := c.repoCtx(repoPath)
 	if err != nil {
 		return err
 	}
 
-	if err := ctx.worktree.Pull(&git.PullOptions{Auth: ctx.auth}); err != nil {
-		if errors.Is(err, git.NoErrAlreadyUpToDate) {
-			return nil
-		}
+	err = ctx.worktree.Pull(&git.PullOptions{Auth: ctx.auth})
+	if err == nil || errors.Is(err, git.NoErrAlreadyUpToDate) {
+		return nil
+	}
+
+	head, headErr := ctx.repo.Head()
+	if headErr != nil {
+		return fmt.Errorf("get HEAD: %w", headErr)
+	}
+
+	commit, commitErr := ctx.repo.CommitObject(head.Hash())
+	if commitErr != nil {
+		return fmt.Errorf("get commit: %w", commitErr)
+	}
+	if commit.NumParents() == 0 {
 		return fmt.Errorf("pull: %w", err)
 	}
 
+	if resetErr := ctx.worktree.Reset(&git.ResetOptions{
+		Commit: commit.ParentHashes[0],
+		Mode:   git.SoftReset,
+	}); resetErr != nil {
+		return fmt.Errorf("reset before pull: %w", resetErr)
+	}
+
+	if pullErr := ctx.worktree.Pull(&git.PullOptions{Auth: ctx.auth}); pullErr != nil {
+		if errors.Is(pullErr, git.NoErrAlreadyUpToDate) {
+			return nil
+		}
+		return fmt.Errorf("pull after reset: %w", pullErr)
+	}
+
+	c.logger.Info("pulled after soft-reset", "path", repoPath)
 	return nil
 }
 
@@ -194,4 +229,16 @@ func (c *Client) defaultAuthor(repo *git.Repository) (*object.Signature, error) 
 		Email: email,
 		When:  time.Now(),
 	}, nil
+}
+
+func (c *Client) currentBranchRefSpec(repo *git.Repository) (config.RefSpec, error) {
+	head, err := repo.Head()
+	if err != nil {
+		return "", fmt.Errorf("get HEAD: %w", err)
+	}
+	if !head.Name().IsBranch() {
+		return "", fmt.Errorf("HEAD is not on a branch")
+	}
+	branch := head.Name().Short()
+	return config.RefSpec(fmt.Sprintf("refs/heads/%s:refs/heads/%s", branch, branch)), nil
 }

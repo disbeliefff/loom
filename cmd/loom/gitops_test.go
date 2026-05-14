@@ -223,6 +223,8 @@ func TestGitOpsPromote_ServiceRequiredWithMultiple(t *testing.T) {
     template: test.tmpl
     promotion:
       enabled: true
+      provider: flux
+      mode: direct-commit
       checkout_path: /tmp/gitops
 `
 	cfgPath := filepath.Join(tempDir, "pipeline-strategies.yaml")
@@ -279,6 +281,8 @@ spec:
     template: test.tmpl
     promotion:
       enabled: true
+      provider: flux
+      mode: direct-commit
       checkout_path: ` + tempDir + `/gitops
       manifest_path_field: kustomize
 `

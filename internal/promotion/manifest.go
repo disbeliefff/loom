@@ -126,7 +126,10 @@ func (m *ManifestMutator) Promote(found *FoundManifest, tag string) (*MutationRe
 	oldTag := getNodeValue(content, m.target.TagPath)
 
 	metadata := getMappingValue(content, "metadata")
-	annotations := getOrEnsureAnnotations(metadata)
+	annotations, err := getOrEnsureAnnotations(metadata)
+	if err != nil {
+		return nil, fmt.Errorf("resolve annotations: %w", err)
+	}
 	oldEvent := getAnnotationValue(annotations, m.target.EventAnnotation)
 
 	newEvent := m.target.Repository + ":" + tag
@@ -290,20 +293,23 @@ func getMappingValue(node *yaml.Node, key string) *yaml.Node {
 	return nil
 }
 
-func getOrEnsureAnnotations(metadata *yaml.Node) *yaml.Node {
+func getOrEnsureAnnotations(metadata *yaml.Node) (*yaml.Node, error) {
 	if metadata == nil {
-		return nil
+		return nil, fmt.Errorf("manifest metadata is nil")
 	}
 	annotations := getMappingValue(metadata, "annotations")
 	if annotations != nil {
-		return annotations
+		if annotations.Kind != yaml.MappingNode {
+			return nil, fmt.Errorf("metadata.annotations is not a mapping (kind=%d)", annotations.Kind)
+		}
+		return annotations, nil
 	}
 	annotations = &yaml.Node{Kind: yaml.MappingNode}
 	metadata.Content = append(metadata.Content,
 		&yaml.Node{Kind: yaml.ScalarNode, Value: "annotations"},
 		annotations,
 	)
-	return annotations
+	return annotations, nil
 }
 
 func getAnnotationValue(annotations *yaml.Node, key string) string {

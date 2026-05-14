@@ -68,6 +68,10 @@ func (a *app) runGitOpsPromote(strategyName, serviceName, tag string, dryRun boo
 
 	promotion.ApplyDefaults(strategy.Promotion)
 
+	if err := promotion.Validate(strategy.Promotion); err != nil {
+		return fmt.Errorf("validate promotion config: %w", err)
+	}
+
 	service, err := promotion.ResolveService(services, serviceName)
 	if err != nil {
 		return err

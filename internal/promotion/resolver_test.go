@@ -72,10 +72,10 @@ func TestResolve(t *testing.T) {
 	svc := models.Service{
 		Key: "wallet-api",
 		Raw: map[string]string{
-			"key":           "wallet-api",
-			"image":         "registry.example.com/platform/wallet-api",
-			"kustomize":     "clusters/production/apps/wallet-api",
-			"helm_release":  "wallet-api",
+			"key":            "wallet-api",
+			"image":          "registry.example.com/platform/wallet-api",
+			"kustomize":      "clusters/production/apps/wallet-api",
+			"helm_release":   "wallet-api",
 			"helm_namespace": "apps",
 		},
 	}
@@ -163,6 +163,60 @@ func TestFindStrategy(t *testing.T) {
 	_, err = promotion.FindStrategy(cfg, "nonexistent")
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "not found")
+}
+
+func TestValidate_UnsupportedProvider(t *testing.T) {
+	p := &models.Promotion{
+		Enabled:  true,
+		Provider: "argocd",
+		Mode:     "direct-commit",
+		Rollback: models.Rollback{Strategy: "previous-annotation"},
+	}
+	promotion.ApplyDefaults(p)
+
+	err := promotion.Validate(p)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "unsupported promotion provider")
+}
+
+func TestValidate_UnsupportedMode(t *testing.T) {
+	p := &models.Promotion{
+		Enabled:  true,
+		Provider: "flux",
+		Mode:     "pull-request",
+		Rollback: models.Rollback{Strategy: "previous-annotation"},
+	}
+	promotion.ApplyDefaults(p)
+
+	err := promotion.Validate(p)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "unsupported promotion mode")
+}
+
+func TestValidate_UnsupportedRollbackStrategy(t *testing.T) {
+	p := &models.Promotion{
+		Enabled:  true,
+		Provider: "flux",
+		Mode:     "direct-commit",
+		Rollback: models.Rollback{Strategy: "snapshots"},
+	}
+	promotion.ApplyDefaults(p)
+
+	err := promotion.Validate(p)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "unsupported rollback strategy")
+}
+
+func TestValidate_ValidConfig(t *testing.T) {
+	p := &models.Promotion{
+		Enabled:  true,
+		Provider: "flux",
+		Mode:     "direct-commit",
+		Rollback: models.Rollback{Strategy: "previous-annotation"},
+	}
+	promotion.ApplyDefaults(p)
+
+	assert.NoError(t, promotion.Validate(p))
 }
 
 func TestResolveService(t *testing.T) {
