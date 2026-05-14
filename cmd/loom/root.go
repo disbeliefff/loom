@@ -38,6 +38,7 @@ func newRootCommand(a *app) *cobra.Command {
 
 	rootCmd.AddCommand(newGenerateCommand(a))
 	rootCmd.AddCommand(newValidateCommand(a))
+	rootCmd.AddCommand(newGitOpsCommand(a))
 
 	return rootCmd
 }
