@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/go-git/go-git/v5/plumbing/transport"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/go-git/go-git/v5/plumbing/transport/ssh"
@@ -64,7 +66,12 @@ func (c *Client) StageAndCommit(repoPath, filePath, message string) (plumbing.Ha
 		return plumbing.Hash{}, fmt.Errorf("stage %q: %w", filePath, err)
 	}
 
-	hash, err := wt.Commit(message, &git.CommitOptions{})
+	author, err := c.defaultAuthor(repo)
+	if err != nil {
+		return plumbing.Hash{}, fmt.Errorf("resolve author: %w", err)
+	}
+
+	hash, err := wt.Commit(message, &git.CommitOptions{Author: author})
 	if err != nil {
 		return plumbing.Hash{}, fmt.Errorf("commit: %w", err)
 	}
@@ -165,4 +172,26 @@ func (c *Client) getAuth(repo *git.Repository) (transport.AuthMethod, error) {
 	}
 
 	return nil, nil
+}
+
+func (c *Client) defaultAuthor(repo *git.Repository) (*object.Signature, error) {
+	cfg, err := repo.Config()
+	if err != nil {
+		return nil, err
+	}
+
+	name := cfg.User.Name
+	email := cfg.User.Email
+	if name == "" {
+		name = "loom"
+	}
+	if email == "" {
+		email = "loom@loom"
+	}
+
+	return &object.Signature{
+		Name:  name,
+		Email: email,
+		When:  time.Now(),
+	}, nil
 }

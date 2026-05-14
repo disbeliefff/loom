@@ -136,6 +136,8 @@ func TestPromote(t *testing.T) {
 }
 
 func TestPromote_WritesRollbackAnnotations(t *testing.T) {
+	t.Setenv("GITHUB_ACTOR", "loom")
+
 	target := testTarget()
 	dir := writeManifestDir(t, helmReleaseYAML)
 	target.ManifestPath = "apps/example-api"
