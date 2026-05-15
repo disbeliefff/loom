@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 
@@ -65,7 +66,7 @@ func (a *app) runValidate(_ *cobra.Command, _ []string) error {
 			a.logger.Warn("Selector config validation issue (may rely on git repo context)", "strategy", strategy.Name, "error", err)
 		}
 
-		if _, err := os.Stat(strategy.Template); os.IsNotExist(err) {
+		if _, err := os.Stat(strategy.Template); err != nil && errors.Is(err, os.ErrNotExist) {
 			a.logger.Warn("Template file not found", "strategy", strategy.Name, "template", strategy.Template)
 		}
 	}

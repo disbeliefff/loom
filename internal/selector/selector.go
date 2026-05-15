@@ -2,6 +2,7 @@ package selector
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
@@ -12,6 +13,11 @@ import (
 	"github.com/Masterminds/sprig/v3"
 	"github.com/disbeliefff/loom/internal/git"
 	"github.com/disbeliefff/loom/internal/models"
+)
+
+var (
+	ErrMissingRepoRoot     = errors.New("repo_root is empty (context repo_root is missing and not configured)")
+	ErrMissingSelectorType = errors.New("selector type is missing")
 )
 
 type Evaluator struct {
@@ -36,7 +42,7 @@ func NewEvaluator(logger *slog.Logger, gitCli *git.Client) *Evaluator {
 // It switches behavior based on the configured "Type" (e.g., git-diff, regex-tag, env-match).
 func (e *Evaluator) Apply(cfg models.SelectorConfig, ctx models.PipelineContext, services []models.Service) ([]models.Job, error) {
 	if cfg.Type == "" {
-		return nil, fmt.Errorf("selector type is missing")
+		return nil, ErrMissingSelectorType
 	}
 
 	switch cfg.Type {
@@ -52,20 +58,20 @@ func (e *Evaluator) Apply(cfg models.SelectorConfig, ctx models.PipelineContext,
 }
 
 func (e *Evaluator) gitDiff(cfg models.SelectorConfig, ctx models.PipelineContext, services []models.Service) ([]models.Job, error) {
-	beforeSha := renderTemplate(cfg.BeforeSHA, ctx)
-	currentSha := renderTemplate(cfg.CurrentSHA, ctx)
+	beforeSha := e.renderTemplate(cfg.BeforeSHA, ctx)
+	currentSha := e.renderTemplate(cfg.CurrentSHA, ctx)
 
 	watchField := cfg.WatchField
 	if watchField == "" {
 		watchField = "watch_dir" // default
 	}
 
-	repoRoot := renderTemplate(cfg.RepoRoot, ctx)
+	repoRoot := e.renderTemplate(cfg.RepoRoot, ctx)
 	if repoRoot == "" {
 		repoRoot = ctx.RepoRoot
 	}
 	if repoRoot == "" {
-		return nil, fmt.Errorf("repo_root is empty (context repo_root is missing and not configured)")
+		return nil, ErrMissingRepoRoot
 	}
 
 	changedFiles, err := e.gitCli.GetChangedFiles(repoRoot, beforeSha, currentSha)
@@ -163,18 +169,20 @@ func (e *Evaluator) envMatch(cfg models.SelectorConfig, services []models.Servic
 }
 
 // renderTemplate evaluates strings containing Go templates like `{{ .Context.BeforeSHA }}`
-func renderTemplate(val string, ctx models.PipelineContext) string {
+func (e *Evaluator) renderTemplate(val string, ctx models.PipelineContext) string {
 	if val == "" {
 		return ""
 	}
 
 	tmpl, err := template.New("val").Funcs(sprig.TxtFuncMap()).Parse(val)
-	if err == nil {
-		var buf bytes.Buffer
-		err = tmpl.Execute(&buf, map[string]any{"Context": ctx})
-		if err == nil {
-			return buf.String()
-		}
+	if err != nil {
+		e.logger.Debug("template parse failed, using raw value", "template", val, "error", err)
+		return val
 	}
-	return val
+	var buf bytes.Buffer
+	if err := tmpl.Execute(&buf, map[string]any{"Context": ctx}); err != nil {
+		e.logger.Debug("template execute failed, using raw value", "template", val, "error", err)
+		return val
+	}
+	return buf.String()
 }

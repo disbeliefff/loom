@@ -89,7 +89,7 @@ func (c *Client) GetChangedFiles(repoPath, beforeSha, currentSha string) ([]stri
 func getInitialCommitFiles(commit *object.Commit) ([]string, error) {
 	tree, err := commit.Tree()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("get tree for commit %s: %w", commit.Hash, err)
 	}
 
 	var files []string
@@ -97,23 +97,26 @@ func getInitialCommitFiles(commit *object.Commit) ([]string, error) {
 		files = append(files, f.Name)
 		return nil
 	})
-	return files, err
+	if err != nil {
+		return nil, fmt.Errorf("iterate tree files: %w", err)
+	}
+	return files, nil
 }
 
 func getDiff(current, before *object.Commit) ([]string, error) {
 	currentTree, err := current.Tree()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("get tree for current commit %s: %w", current.Hash, err)
 	}
 
 	beforeTree, err := before.Tree()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("get tree for before commit %s: %w", before.Hash, err)
 	}
 
 	changes, err := beforeTree.Diff(currentTree)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("compute diff: %w", err)
 	}
 
 	changedFiles := make([]string, 0, len(changes))

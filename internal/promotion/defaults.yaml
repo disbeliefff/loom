@@ -1,0 +1,11 @@
+object_ref:
+  api_version: helm.toolkit.fluxcd.io/v2
+  kind: HelmRelease
+  name_field: key
+image_ref:
+  repository_field: image
+  repository_path: spec.values.image.repository
+  tag_path: spec.values.image.tag
+  event_annotation: event.toolkit.fluxcd.io/image
+rollback:
+  strategy: previous-annotation

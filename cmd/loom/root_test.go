@@ -14,8 +14,14 @@ func TestNewRootCommand(t *testing.T) {
 	root := newRootCommand(a)
 
 	assert.Equal(t, "loom", root.Use)
-	assert.Equal(t, "generate", root.Commands()[0].Use)
-	assert.Equal(t, "validate", root.Commands()[1].Use)
+
+	cmdNames := make(map[string]bool)
+	for _, cmd := range root.Commands() {
+		cmdNames[cmd.Use] = true
+	}
+	assert.True(t, cmdNames["generate"])
+	assert.True(t, cmdNames["validate"])
+	assert.True(t, cmdNames["gitops"])
 }
 
 func TestGenerateCommandFlags(t *testing.T) {
@@ -46,6 +52,55 @@ func TestValidateCommandFlags(t *testing.T) {
 	assert.NotNil(t, flags.Lookup("repo-root"))
 	assert.NotNil(t, flags.Lookup("debug"))
 	assert.Nil(t, flags.Lookup("out"))
+}
+
+func TestGitOpsSubcommandsExist(t *testing.T) {
+	a := newApp()
+	root := newRootCommand(a)
+
+	gitopsCmd, _, err := root.Find([]string{"gitops"})
+	require.NoError(t, err)
+
+	subNames := make(map[string]bool)
+	for _, cmd := range gitopsCmd.Commands() {
+		subNames[cmd.Use] = true
+	}
+	assert.True(t, subNames["promote"])
+	assert.True(t, subNames["rollback"])
+}
+
+func TestPromoteCommandFlags(t *testing.T) {
+	a := newApp()
+	root := newRootCommand(a)
+
+	promoteCmd, _, err := root.Find([]string{"gitops", "promote"})
+	require.NoError(t, err)
+
+	flags := promoteCmd.Flags()
+	assert.NotNil(t, flags.Lookup("config"))
+	assert.NotNil(t, flags.Lookup("services"))
+	assert.NotNil(t, flags.Lookup("strategy"))
+	assert.NotNil(t, flags.Lookup("service"))
+	assert.NotNil(t, flags.Lookup("tag"))
+	assert.NotNil(t, flags.Lookup("dry-run"))
+	assert.NotNil(t, flags.Lookup("debug"))
+}
+
+func TestRollbackCommandFlags(t *testing.T) {
+	a := newApp()
+	root := newRootCommand(a)
+
+	rollbackCmd, _, err := root.Find([]string{"gitops", "rollback"})
+	require.NoError(t, err)
+
+	flags := rollbackCmd.Flags()
+	assert.NotNil(t, flags.Lookup("config"))
+	assert.NotNil(t, flags.Lookup("services"))
+	assert.NotNil(t, flags.Lookup("strategy"))
+	assert.NotNil(t, flags.Lookup("service"))
+	assert.NotNil(t, flags.Lookup("dry-run"))
+	assert.NotNil(t, flags.Lookup("debug"))
+	assert.Nil(t, flags.Lookup("tag"))
 }
 
 func TestExecuteReturnsConfigLoadErrors(t *testing.T) {

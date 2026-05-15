@@ -45,7 +45,13 @@ func (a *app) runGenerate(_ *cobra.Command, _ []string) error {
 		return fmt.Errorf("get pipeline context: %w", err)
 	}
 
-	a.logger.Debug("Pipeline Context initialized", "context", fmt.Sprintf("%+v", ctx))
+	a.logger.Debug("pipeline context initialized",
+		"commit_sha", ctx.CommitSHA,
+		"commit_branch", ctx.CommitBranch,
+		"commit_tag", ctx.CommitTag,
+		"pipeline_id", ctx.PipelineID,
+		"repo_root", ctx.RepoRoot,
+	)
 
 	evaluator := selector.NewEvaluator(a.logger, git.NewClient(a.logger))
 
@@ -80,6 +86,6 @@ func (a *app) runGenerate(_ *cobra.Command, _ []string) error {
 		fallback := "stages:\n  - no-op\nno-op:\n  stage: no-op\n  script:\n    - echo 'No strategies matched'"
 		return os.WriteFile(a.outputPath, []byte(fallback), 0600)
 	}
-	fmt.Println("No strategies matched")
+	a.logger.Warn("no strategies matched")
 	return nil
 }

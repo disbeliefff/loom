@@ -10,12 +10,42 @@ type Service struct {
 	Raw map[string]string
 }
 
-// Strategy represents a single generation strategy from pipeline-strategies.yaml
 type Strategy struct {
 	Name      string         `yaml:"name" json:"name"`
 	Condition string         `yaml:"condition" json:"condition"`
 	Selector  SelectorConfig `yaml:"selector" json:"selector"`
 	Template  string         `yaml:"template" json:"template"`
+	Promotion *Promotion     `yaml:"promotion" json:"promotion"`
+}
+
+type Promotion struct {
+	Enabled           bool      `yaml:"enabled" json:"enabled"`
+	Provider          string    `yaml:"provider" json:"provider"`
+	Mode              string    `yaml:"mode" json:"mode"`
+	Target            string    `yaml:"target" json:"target"`
+	CheckoutPath      string    `yaml:"checkout_path" json:"checkout_path"`
+	ManifestPathField string    `yaml:"manifest_path_field" json:"manifest_path_field"`
+	ObjectRef         ObjectRef `yaml:"object_ref" json:"object_ref"`
+	ImageRef          ImageRef  `yaml:"image_ref" json:"image_ref"`
+	Rollback          Rollback  `yaml:"rollback" json:"rollback"`
+}
+
+type ObjectRef struct {
+	APIVersion     string `yaml:"api_version" json:"api_version"`
+	Kind           string `yaml:"kind" json:"kind"`
+	NameField      string `yaml:"name_field" json:"name_field"`
+	NamespaceField string `yaml:"namespace_field" json:"namespace_field"`
+}
+
+type ImageRef struct {
+	RepositoryField string `yaml:"repository_field" json:"repository_field"`
+	RepositoryPath  string `yaml:"repository_path" json:"repository_path"`
+	TagPath         string `yaml:"tag_path" json:"tag_path"`
+	EventAnnotation string `yaml:"event_annotation" json:"event_annotation"`
+}
+
+type Rollback struct {
+	Strategy string `yaml:"strategy" json:"strategy"`
 }
 
 // SelectorConfig holds configuration fields for any type of selector.
