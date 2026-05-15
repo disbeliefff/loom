@@ -34,7 +34,7 @@ func getDefaults() *models.Promotion {
 	}
 	var d models.Promotion
 	if err := yaml.Unmarshal(defaultsYAML, &d); err != nil {
-		panic("embedded defaults.yaml is invalid: " + err.Error())
+		panic(fmt.Errorf("embedded defaults.yaml is invalid: %w", err))
 	}
 	cachedDefaults = &d
 	return cachedDefaults

@@ -1,10 +1,13 @@
 package promotion
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/disbeliefff/loom/internal/models"
 )
+
+var ErrNilConfig = errors.New("promotion config is nil")
 
 type ResolvedTarget struct {
 	CheckoutPath     string
@@ -31,7 +34,7 @@ func resolveField(raw map[string]string, serviceKey, field string) (string, erro
 
 func Resolve(promotion *models.Promotion, service models.Service) (*ResolvedTarget, error) {
 	if promotion == nil {
-		return nil, fmt.Errorf("promotion config is nil")
+		return nil, ErrNilConfig
 	}
 
 	resolve := func(field string) (string, error) {

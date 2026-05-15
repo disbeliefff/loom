@@ -2,6 +2,7 @@ package promotion
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -23,6 +24,35 @@ const (
 	annPromotedAt    = annotationDomain + "/promoted-at"
 	annPromotedBy    = annotationDomain + "/promoted-by"
 )
+
+var (
+	ErrNoMetadata            = errors.New("manifest has no metadata")
+	ErrNoPreviousAnnotations = errors.New("no previous promotion annotations found for rollback")
+	ErrNoYAMLDocuments       = errors.New("no yaml documents found")
+	ErrNoServices            = errors.New("no services found")
+	ErrImagePolicyConflict   = errors.New("manifest contains $imagepolicy comments; aborting promotion (conflicts with Flux Image Automation)")
+)
+
+type NotFoundError struct {
+	Kind string
+	Name string
+}
+
+func (e *NotFoundError) Error() string { return fmt.Sprintf("%s %q not found", e.Kind, e.Name) }
+
+type ManifestLookupError struct {
+	APIVersion string
+	Kind       string
+	Name       string
+	Namespace  string
+	Path       string
+	Reason     string
+}
+
+func (e *ManifestLookupError) Error() string {
+	return fmt.Sprintf("%s for apiVersion=%q kind=%q name=%q namespace=%q under %q",
+		e.Reason, e.APIVersion, e.Kind, e.Name, e.Namespace, e.Path)
+}
 
 type MutationResult struct {
 	FilePath string
@@ -90,10 +120,14 @@ func (m *ManifestMutator) FindManifest(checkoutPath string) (*FoundManifest, err
 		for i, node := range nodes {
 			if matchesIdentity(node, m.target) {
 				if found != nil {
-					return nil, fmt.Errorf(
-						"expected exactly one manifest matching apiVersion=%q kind=%q name=%q namespace=%q but found multiple under %q",
-						m.target.APIVersion, m.target.Kind, m.target.Name, m.target.Namespace, fullPath,
-					)
+					return nil, &ManifestLookupError{
+						APIVersion: m.target.APIVersion,
+						Kind:       m.target.Kind,
+						Name:       m.target.Name,
+						Namespace:  m.target.Namespace,
+						Path:       fullPath,
+						Reason:     "multiple manifests found",
+					}
 				}
 				found = &FoundManifest{
 					FilePath:   fp,
@@ -105,10 +139,14 @@ func (m *ManifestMutator) FindManifest(checkoutPath string) (*FoundManifest, err
 	}
 
 	if found == nil {
-		return nil, fmt.Errorf(
-			"no manifest matching apiVersion=%q kind=%q name=%q namespace=%q found under %q",
-			m.target.APIVersion, m.target.Kind, m.target.Name, m.target.Namespace, fullPath,
-		)
+		return nil, &ManifestLookupError{
+			APIVersion: m.target.APIVersion,
+			Kind:       m.target.Kind,
+			Name:       m.target.Name,
+			Namespace:  m.target.Namespace,
+			Path:       fullPath,
+			Reason:     "no manifest matching identity found",
+		}
 	}
 
 	return found, nil
@@ -119,7 +157,7 @@ func (m *ManifestMutator) Promote(found *FoundManifest, tag string) (*MutationRe
 	content := rootMapping(node)
 
 	if hasImagePolicyComments(node) {
-		return nil, fmt.Errorf("manifest contains $imagepolicy comments; aborting promotion (conflicts with Flux Image Automation)")
+		return nil, ErrImagePolicyConflict
 	}
 
 	oldRepo := getNodeValue(content, m.target.RepositoryPath)
@@ -163,17 +201,17 @@ func (m *ManifestMutator) Rollback(found *FoundManifest) (*MutationResult, error
 
 	metadata := getMappingValue(content, "metadata")
 	if metadata == nil {
-		return nil, fmt.Errorf("manifest has no metadata")
+		return nil, ErrNoMetadata
 	}
 	annotations := getMappingValue(metadata, "annotations")
 	if annotations == nil {
-		return nil, fmt.Errorf("no previous promotion annotations found for rollback")
+		return nil, ErrNoPreviousAnnotations
 	}
 
 	prevRepo := getAnnotationValue(annotations, annPreviousRepo)
 	prevTag := getAnnotationValue(annotations, annPreviousTag)
 	if prevRepo == "" || prevTag == "" {
-		return nil, fmt.Errorf("no previous promotion annotations found for rollback")
+		return nil, ErrNoPreviousAnnotations
 	}
 
 	curRepo := getNodeValue(content, m.target.RepositoryPath)
@@ -232,15 +270,15 @@ func decodeDocuments(data []byte) ([]*yaml.Node, error) {
 	for {
 		var node yaml.Node
 		if err := decoder.Decode(&node); err != nil {
-			if err == io.EOF {
+			if errors.Is(err, io.EOF) {
 				break
 			}
-			return nil, err
+			return nil, fmt.Errorf("decode YAML document: %w", err)
 		}
 		nodes = append(nodes, &node)
 	}
 	if len(nodes) == 0 {
-		return nil, fmt.Errorf("no YAML documents found")
+		return nil, ErrNoYAMLDocuments
 	}
 	return nodes, nil
 }
@@ -400,7 +438,7 @@ func findByName[T any](items []T, name string, extract func(T) string, kind stri
 			return &items[i], nil
 		}
 	}
-	return nil, fmt.Errorf("%s %q not found", kind, name)
+	return nil, &NotFoundError{Kind: kind, Name: name}
 }
 
 func FindStrategy(cfg *models.Config, name string) (*models.Strategy, error) {
@@ -409,7 +447,7 @@ func FindStrategy(cfg *models.Config, name string) (*models.Strategy, error) {
 
 func ResolveService(services []models.Service, serviceName string) (*models.Service, error) {
 	if len(services) == 0 {
-		return nil, fmt.Errorf("no services found")
+		return nil, ErrNoServices
 	}
 	if serviceName == "" {
 		if len(services) == 1 {

@@ -16,11 +16,15 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/transport/ssh"
 )
 
+var ErrNotOnBranch = errors.New("head is not on a branch")
+
 type PushError struct {
 	Err error
 }
 
-func (e *PushError) Error() string { return fmt.Sprintf("push failed: %v", e.Err) }
+func (e *PushError) Error() string { return "push failed: " + e.Err.Error() }
+
+func (e *PushError) Unwrap() error { return e.Err }
 
 type repoContext struct {
 	repo     *git.Repository
@@ -212,7 +216,7 @@ func (c *Client) getAuth(repo *git.Repository) (transport.AuthMethod, error) {
 func (c *Client) defaultAuthor(repo *git.Repository) (*object.Signature, error) {
 	cfg, err := repo.Config()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("read git repo config: %w", err)
 	}
 
 	name := cfg.User.Name
@@ -237,7 +241,7 @@ func (c *Client) currentBranchRefSpec(repo *git.Repository) (config.RefSpec, err
 		return "", fmt.Errorf("get HEAD: %w", err)
 	}
 	if !head.Name().IsBranch() {
-		return "", fmt.Errorf("HEAD is not on a branch")
+		return "", ErrNotOnBranch
 	}
 	branch := head.Name().Short()
 	return config.RefSpec(fmt.Sprintf("refs/heads/%s:refs/heads/%s", branch, branch)), nil

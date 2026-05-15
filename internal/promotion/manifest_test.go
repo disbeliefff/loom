@@ -98,7 +98,7 @@ spec:
 	mutator := promotion.NewManifestMutator(target)
 	_, err := mutator.FindManifest(manifestDir)
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "expected exactly one")
+	assert.Contains(t, err.Error(), "multiple manifests found")
 }
 
 func TestFindManifest_PathIsFile(t *testing.T) {

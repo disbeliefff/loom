@@ -92,8 +92,10 @@ func (a *app) runGitOpsRollback(strategyName, serviceName string, dryRun bool) e
 		"service", service.Key,
 		"target", target.Target,
 		"file", result.FilePath,
-		"repository", fmt.Sprintf("%s → %s", result.OldRepo, result.NewRepo),
-		"tag", fmt.Sprintf("%s → %s", result.OldTag, result.NewTag),
+		"old_repository", result.OldRepo,
+		"new_repository", result.NewRepo,
+		"old_tag", result.OldTag,
+		"new_tag", result.NewTag,
 	)
 
 	if dryRun {
